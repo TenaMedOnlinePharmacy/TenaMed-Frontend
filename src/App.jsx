@@ -8,6 +8,7 @@ import ProductsPage from './pages/ProductsPage';
 import ProductDetailsPage from './pages/ProductDetailsPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PharmacistDashboard from './pages/PharmacistDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import UploadPrescriptionPage from './pages/UploadPrescriptionPage';
@@ -34,6 +35,7 @@ function App() {
           <Route path="products/:id" element={<ProductDetailsPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="payment-success" element={<PaymentSuccessPage />} />
           <Route path="profile" element={<UserProfilePage />} />
           <Route path="pharmacist/dashboard" element={<PharmacistDashboard />} />
           <Route path="admin/dashboard" element={<AdminDashboard />} />

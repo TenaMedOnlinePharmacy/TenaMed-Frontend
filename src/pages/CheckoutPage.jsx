@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { MapPin, CreditCard, CheckCircle, Truck } from 'lucide-react';
+import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
 
 const CheckoutPage = () => {
     const { cartItems, getCartTotal, clearCart } = useCart();
     const navigate = useNavigate();
-    const [step, setStep] = useState(1); // 1: Shipping, 2: Payment, 3: Confirmation
+    const [step, setStep] = useState(1); // 1: Shipping, 2: Payment
     const [paymentMethod, setPaymentMethod] = useState('card');
 
-    if (cartItems.length === 0 && step !== 3) {
+    if (cartItems.length === 0) {
         navigate('/cart');
         return null;
     }
@@ -23,7 +23,7 @@ const CheckoutPage = () => {
         // Simulate API call
         setTimeout(() => {
             clearCart();
-            setStep(3);
+            navigate('/payment-success', { state: { total } });
         }, 1500);
     };
 
@@ -38,30 +38,10 @@ const CheckoutPage = () => {
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>1</div>
                         <div className={`w-20 h-1 bg-gray-200 mx-2 ${step >= 2 ? 'bg-blue-600' : ''}`}></div>
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
-                        <div className={`w-20 h-1 bg-gray-200 mx-2 ${step >= 3 ? 'bg-blue-600' : ''}`}></div>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 3 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-500'}`}>3</div>
                     </div>
                 </div>
 
-                {step === 3 ? (
-                    <div className="max-w-xl mx-auto bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-10 h-10 text-green-600" />
-                        </div>
-                        <h2 className="text-3xl font-bold text-gray-900 mb-4">Order Placed Successfully!</h2>
-                        <p className="text-gray-600 mb-8">
-                            Thank you for your order. We have sent a confirmation email to <span className="font-semibold">customer@example.com</span>.
-                            Your order #ORD-78291 will be delivered within 4 hours.
-                        </p>
-                        <button
-                            onClick={() => navigate('/')}
-                            className="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition"
-                        >
-                            Back to Home
-                        </button>
-                    </div>
-                ) : (
-                    <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
+                <div className="flex flex-col lg:flex-row gap-8 max-w-6xl mx-auto">
                         {/* Form Section */}
                         <div className="flex-1 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                             {step === 1 ? (
@@ -225,7 +205,6 @@ const CheckoutPage = () => {
                             </div>
                         </div>
                     </div>
-                )}
             </div>
         </div>
     );
