@@ -1,6 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Suspense } from 'react';
 import MainLayout from './layouts/MainLayout';
+import { useAuth } from './context/AuthContext';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -13,7 +14,15 @@ import PharmacistDashboard from './pages/PharmacistDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import UploadPrescriptionPage from './pages/UploadPrescriptionPage';
 import UserProfilePage from './pages/UserProfilePage';
+import OrderTrackingPage from './pages/OrderTrackingPage';
+import PrescriptionReviewPage from './pages/PrescriptionReviewPage';
+import HospitalRegistrationPage from './pages/HospitalRegistrationPage';
+import HospitalDashboardPage from './pages/HospitalDashboardPage';
+import DoctorLoginPage from './pages/DoctorLoginPage';
+import EPrescriptionPage from './pages/EPrescriptionPage';
+import MedicalVerificationDashboardPage from './pages/MedicalVerificationDashboardPage';
 import LoadingSpinner from './components/LoadingSpinner';
+import { isDevBypassAllowAllRoles } from './config/devBuilderMode';
 
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
@@ -25,6 +34,24 @@ const PlaceholderInfo = ({ title }) => (
   </div>
 );
 
+const ProtectedRoute = ({ roles, children }) => {
+  const { isAuthenticated, hasAnyRole } = useAuth();
+
+  if (isDevBypassAllowAllRoles()) {
+    return children;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (roles?.length > 0 && !hasAnyRole(roles)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
@@ -33,13 +60,61 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductsPage />} />
           <Route path="products/:id" element={<ProductDetailsPage />} />
-          <Route path="cart" element={<CartPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="payment-success" element={<PaymentSuccessPage />} />
-          <Route path="profile" element={<UserProfilePage />} />
-          <Route path="pharmacist/dashboard" element={<PharmacistDashboard />} />
-          <Route path="admin/dashboard" element={<AdminDashboard />} />
-          <Route path="upload-prescription" element={<UploadPrescriptionPage />} />
+          <Route
+            path="cart"
+            element={<ProtectedRoute roles={['customer']}><CartPage /></ProtectedRoute>}
+          />
+          <Route
+            path="checkout"
+            element={<ProtectedRoute roles={['customer']}><CheckoutPage /></ProtectedRoute>}
+          />
+          <Route
+            path="payment-success"
+            element={<ProtectedRoute roles={['customer']}><PaymentSuccessPage /></ProtectedRoute>}
+          />
+          <Route
+            path="profile"
+            element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>}
+          />
+          <Route
+            path="orders"
+            element={<ProtectedRoute roles={['customer']}><OrderTrackingPage /></ProtectedRoute>}
+          />
+          <Route
+            path="upload-prescription"
+            element={<ProtectedRoute roles={['customer']}><UploadPrescriptionPage /></ProtectedRoute>}
+          />
+
+          <Route
+            path="pharmacist/dashboard"
+            element={<ProtectedRoute roles={['pharmacist']}><PharmacistDashboard /></ProtectedRoute>}
+          />
+          <Route
+            path="pharmacist/prescription-review"
+            element={<ProtectedRoute roles={['pharmacist']}><PrescriptionReviewPage /></ProtectedRoute>}
+          />
+
+          <Route path="hospital/register" element={<HospitalRegistrationPage />} />
+          <Route
+            path="hospital/dashboard"
+            element={<ProtectedRoute roles={['hospital']}><HospitalDashboardPage /></ProtectedRoute>}
+          />
+
+          <Route path="doctor/login" element={<DoctorLoginPage />} />
+          <Route
+            path="doctor/prescriptions/new"
+            element={<ProtectedRoute roles={['doctor']}><EPrescriptionPage /></ProtectedRoute>}
+          />
+
+          <Route
+            path="admin/dashboard"
+            element={<ProtectedRoute roles={['admin']}><AdminDashboard /></ProtectedRoute>}
+          />
+          <Route
+            path="admin/medical-verification"
+            element={<ProtectedRoute roles={['admin']}><MedicalVerificationDashboardPage /></ProtectedRoute>}
+          />
+
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />

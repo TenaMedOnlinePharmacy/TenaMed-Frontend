@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Package, MapPin, Phone, Mail, Clock, CheckCircle, Truck, XCircle, Search } from 'lucide-react';
-import { mockOrders } from '../data/mockOrders';
+import { getOrders } from '../data/orderStore';
 
 const UserProfilePage = () => {
     const [activeTab, setActiveTab] = useState('profile'); // profile, orders
@@ -11,7 +11,7 @@ const UserProfilePage = () => {
         address: 'Bole, Addis Ababa'
     });
 
-    const [orders, setOrders] = useState(mockOrders);
+    const [orders] = useState(getOrders());
 
     return (
         <div className="bg-gray-50 min-h-screen py-10">

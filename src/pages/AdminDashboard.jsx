@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Building2, Plus, Trash2, Search, Edit } from 'lucide-react';
 
 // Mock Data
@@ -15,8 +16,8 @@ const mockPharmacies = [
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('users'); // users, pharmacies
-    const [users, setUsers] = useState(mockUsers);
-    const [pharmacies, setPharmacies] = useState(mockPharmacies);
+    const [users] = useState(mockUsers);
+    const [pharmacies] = useState(mockPharmacies);
 
     return (
         <div className="bg-gray-50 min-h-screen">
@@ -44,6 +45,12 @@ const AdminDashboard = () => {
             </div>
 
             <div className="container mx-auto px-4 py-8">
+                <div className="mb-4">
+                    <Link to="/admin/medical-verification" className="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black transition">
+                        Open Medical Verification Queue
+                    </Link>
+                </div>
+
                 {activeTab === 'users' ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">

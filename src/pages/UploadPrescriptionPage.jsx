@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ocrUploadPrescription } from '../api/axios';
+import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
 const UploadPrescriptionPage = () => {
+    const cameraInputRef = useRef(null);
     const [file, setFile] = useState(null);
     const [status, setStatus] = useState('idle'); // idle, uploading, success, error
     const [errorMsg, setErrorMsg] = useState('');
+    const [matches, setMatches] = useState([]);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
         validateAndSetFile(selectedFile);
+    };
+
+    const handleCameraChange = (e) => {
+        const capturedFile = e.target.files[0];
+        validateAndSetFile(capturedFile);
     };
 
     const validateAndSetFile = (selectedFile) => {
@@ -35,14 +44,30 @@ const UploadPrescriptionPage = () => {
         setFile(selectedFile);
     };
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         if (!file) return;
 
         setStatus('uploading');
-        // Simulate upload
-        setTimeout(() => {
+        setErrorMsg('');
+        setMatches([]);
+
+        try {
+            const uploadResponse = await ocrUploadPrescription(file);
+            console.log('OCR Upload Response:', uploadResponse);
+            const uploadData = uploadResponse?.data;
+            setMatches(Array.isArray(uploadData) ? uploadData : []);
             setStatus('success');
-        }, 2000);
+        } catch (error) {
+            if (shouldUseBuilderFallback(error)) {
+                setMatches([]);
+                setStatus('success');
+                return;
+            }
+
+            const message = error?.response?.data?.message || error?.message || 'Upload failed. Please try again.';
+            setErrorMsg(message);
+            setStatus('error');
+        }
     };
 
     return (
@@ -61,13 +86,35 @@ const UploadPrescriptionPage = () => {
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="w-10 h-10 text-green-600" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Prescription Uploaded!</h2>
-                        <p className="text-gray-600 mb-8">
-                            Your prescription ID is <span className="font-semibold">#PRE-9921</span>.
-                            We will notify you once verified.
-                        </p>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Upload Processed</h2>
+                        {matches.length === 0 ? (
+                            <p className="text-gray-600 mb-8">No matches found.</p>
+                        ) : (
+                            <div className="mb-6 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
+                                <table className="min-w-full border-collapse">
+                                    <thead>
+                                        <tr className="text-xs uppercase text-gray-500">
+                                            <th className="px-3 py-2 text-left">Prescription ID</th>
+                                            <th className="px-3 py-2 text-left">Prescription Item ID</th>
+                                            <th className="px-3 py-2 text-left">Pharmacy ID</th>
+                                            <th className="px-3 py-2 text-left">Medicine ID</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {matches.map((match, index) => (
+                                            <tr key={`${match.prescriptionItemId || index}`} className="border-t border-gray-200 align-top">
+                                                <td className="px-3 py-2 break-all">{match.prescriptionId || '-'}</td>
+                                                <td className="px-3 py-2 break-all">{match.prescriptionItemId || '-'}</td>
+                                                <td className="px-3 py-2 break-all">{match.pharmacyId || '-'}</td>
+                                                <td className="px-3 py-2 break-all">{match.medicineId || '-'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                         <div className="flex justify-center gap-4">
-                            <button onClick={() => { setFile(null); setStatus('idle'); }} className="text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full font-medium transition">
+                            <button onClick={() => { setFile(null); setMatches([]); setStatus('idle'); }} className="text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full font-medium transition">
                                 Upload Another
                             </button>
                             <Link to="/" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">
@@ -77,6 +124,23 @@ const UploadPrescriptionPage = () => {
                     </div>
                 ) : (
                     <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                            <button
+                                type="button"
+                                onClick={() => cameraInputRef.current?.click()}
+                                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                            >
+                                Take Photo
+                            </button>
+                            <input
+                                ref={cameraInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                className="hidden"
+                                onChange={handleCameraChange}
+                            />
+                        </div>
                         <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center hover:bg-gray-50 transition relative">
                             <input
                                 type="file"

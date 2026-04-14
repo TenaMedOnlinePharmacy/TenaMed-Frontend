@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Package, ClipboardList, CheckCircle, XCircle, Truck, Plus, Trash2, Edit } from 'lucide-react';
 import { products } from '../data/mockProducts';
 import { mockOrders } from '../data/mockOrders';
@@ -7,6 +8,12 @@ const PharmacistDashboard = () => {
     const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'inventory'
     const [inventory, setInventory] = useState(products);
     const [orders, setOrders] = useState(mockOrders);
+
+    const pendingOrders = orders.filter((order) => order.status === 'Pending').length;
+    const acceptedOrders = orders.filter((order) => order.status === 'Accepted').length;
+    const completedOrders = orders.filter((order) => order.status === 'Delivered').length;
+    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
+    const outOfStockCount = inventory.filter((item) => !item.inStock).length;
 
     // Order Actions
     const updateOrderStatus = (orderId, newStatus) => {
@@ -48,6 +55,35 @@ const PharmacistDashboard = () => {
             </div>
 
             <div className="container mx-auto px-4 py-8">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <div className="bg-white rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-500">Pending Orders</p>
+                        <p className="text-2xl font-bold text-amber-600">{pendingOrders}</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-500">Accepted Orders</p>
+                        <p className="text-2xl font-bold text-blue-600">{acceptedOrders}</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-500">Completed Orders</p>
+                        <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-500">Sales (Mock)</p>
+                        <p className="text-2xl font-bold text-gray-900">${revenue.toFixed(2)}</p>
+                    </div>
+                    <div className="bg-white rounded-xl border border-gray-100 p-4">
+                        <p className="text-xs text-gray-500">Out of Stock</p>
+                        <p className="text-2xl font-bold text-red-600">{outOfStockCount}</p>
+                    </div>
+                </div>
+
+                <div className="mb-6">
+                    <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                        Open Prescription Review Queue
+                    </Link>
+                </div>
+
                 {activeTab === 'orders' ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">

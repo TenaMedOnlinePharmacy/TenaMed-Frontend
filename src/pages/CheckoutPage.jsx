@@ -2,12 +2,27 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
+import { paymentInitialize } from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { saveOrder } from '../data/orderStore';
+import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
 const CheckoutPage = () => {
     const { cartItems, getCartTotal, clearCart } = useCart();
+    const { userEmail } = useAuth();
     const navigate = useNavigate();
     const [step, setStep] = useState(1); // 1: Shipping, 2: Payment
     const [paymentMethod, setPaymentMethod] = useState('card');
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+    const [shippingData, setShippingData] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        address: '',
+        city: '',
+        phone: '',
+    });
 
     if (cartItems.length === 0) {
         navigate('/cart');
@@ -18,12 +33,66 @@ const CheckoutPage = () => {
     const shipping = subtotal > 50 ? 0 : 5.00;
     const total = subtotal + shipping;
 
-    const handlePlaceOrder = (e) => {
+    const handlePlaceOrder = async (e) => {
         e.preventDefault();
-        // Simulate API call
+        setErrorMsg('');
+
+        if (paymentMethod === 'chapa') {
+            setIsProcessing(true);
+
+            try {
+                const response = await paymentInitialize();
+
+                const checkoutUrl = response?.data?.checkout_url;
+                if (!checkoutUrl) {
+                    throw new Error('Missing checkout URL');
+                }
+
+                window.location.href = checkoutUrl;
+                return;
+            } catch (error) {
+                if (shouldUseBuilderFallback(error)) {
+                    saveOrder({
+                        id: `ORD-BLD-${Math.floor(Math.random() * 90000 + 10000)}`,
+                        customer: `${shippingData.firstName} ${shippingData.lastName}`.trim(),
+                        date: new Date().toISOString().slice(0, 10),
+                        total,
+                        status: 'Pending',
+                        items: cartItems.map((item) => ({
+                            name: item.name,
+                            quantity: item.quantity,
+                        })),
+                    });
+                    clearCart();
+                    navigate('/payment-success', { state: { total } });
+                    return;
+                }
+
+                const message = error?.response?.data?.message || 'Payment initialization failed. Please try again.';
+                setErrorMsg(message);
+            } finally {
+                setIsProcessing(false);
+            }
+
+            return;
+        }
+
+        setIsProcessing(true);
         setTimeout(() => {
+            saveOrder({
+                id: `ORD-${Math.floor(Math.random() * 90000 + 10000)}`,
+                customer: `${shippingData.firstName} ${shippingData.lastName}`.trim(),
+                date: new Date().toISOString().slice(0, 10),
+                total,
+                status: 'Pending',
+                items: cartItems.map((item) => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                })),
+            });
             clearCart();
             navigate('/payment-success', { state: { total } });
+            setIsProcessing(false);
         }, 1500);
     };
 
@@ -49,29 +118,83 @@ const CheckoutPage = () => {
                                     <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
                                         <MapPin className="text-blue-600" /> Shipping Information
                                     </h2>
-                                    <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setStep(2); }}>
+                                    <form
+                                        className="space-y-4"
+                                        onSubmit={(e) => {
+                                            e.preventDefault();
+                                            setStep(2);
+                                        }}
+                                    >
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                                <input type="text" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="John" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    placeholder="John"
+                                                    value={shippingData.firstName}
+                                                    onChange={(e) => setShippingData({ ...shippingData, firstName: e.target.value })}
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                                <input type="text" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Doe" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    placeholder="Doe"
+                                                    value={shippingData.lastName}
+                                                    onChange={(e) => setShippingData({ ...shippingData, lastName: e.target.value })}
+                                                />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                                            <input type="text" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="123 Bole Road" />
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                placeholder="123 Bole Road"
+                                                value={shippingData.address}
+                                                onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })}
+                                            />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                                <input type="text" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Addis Ababa" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    placeholder="Addis Ababa"
+                                                    value={shippingData.city}
+                                                    onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
+                                                />
                                             </div>
                                             <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                                <input
+                                                    type="email"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    placeholder="you@example.com"
+                                                    value={shippingData.email}
+                                                    onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                                <input type="tel" required className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="+251 9..." />
+                                                <input
+                                                    type="tel"
+                                                    required
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    placeholder="+251 9..."
+                                                    value={shippingData.phone}
+                                                    onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
+                                                />
                                             </div>
                                         </div>
                                         <div className="pt-4">
@@ -162,8 +285,22 @@ const CheckoutPage = () => {
                                             </div>
                                         )}
 
-                                        <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200 mt-6">
-                                            Place Order (${total.toFixed(2)})
+                                        {errorMsg && (
+                                            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                                                {errorMsg}
+                                            </div>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={isProcessing}
+                                            className={`w-full py-4 rounded-xl font-bold transition shadow-lg mt-6 ${
+                                                isProcessing
+                                                    ? 'bg-blue-400 text-white cursor-not-allowed'
+                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+                                            }`}
+                                        >
+                                            {isProcessing ? 'Processing...' : `Place Order ($${total.toFixed(2)})`}
                                         </button>
                                     </form>
                                 </div>
