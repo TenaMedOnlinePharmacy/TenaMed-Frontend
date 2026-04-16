@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ShoppingCart, Menu, User, Search, X } from 'lucide-react';
 
 import { useCart } from '../context/CartContext';
@@ -7,8 +7,10 @@ import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const location = useLocation();
     const { getCartCount } = useCart();
     const { isAuthenticated, userRole, userEmail, logout } = useAuth();
+    const shouldShowFooter = !['/login', '/register'].includes(location.pathname);
 
     const navByRole = {
         guest: [
@@ -22,6 +24,10 @@ const MainLayout = () => {
             { to: '/products', label: 'Medicines' },
             { to: '/upload-prescription', label: 'Prescription' },
             { to: '/orders', label: 'My Orders' },
+        ],
+        pharmacy: [
+            { to: '/pharmacist/dashboard', label: 'Dashboard' },
+            { to: '/pharmacist/prescription-review', label: 'Prescription Review' },
         ],
         pharmacist: [
             { to: '/pharmacist/dashboard', label: 'Dashboard' },
@@ -190,39 +196,41 @@ const MainLayout = () => {
             </main>
 
             {/* Footer */}
-            <footer className="bg-gray-900 text-gray-300 py-12">
-                <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
-                    <div>
-                        <h3 className="text-white text-xl font-bold mb-4">TenaMed</h3>
-                        <p className="text-sm text-gray-400">Your trusted online pharmacy partner. Quality healthcare delivered to your doorstep.</p>
+            {shouldShowFooter && (
+                <footer className="bg-gray-900 text-gray-300 py-12">
+                    <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
+                        <div>
+                            <h3 className="text-white text-xl font-bold mb-4">TenaMed</h3>
+                            <p className="text-sm text-gray-400">Your trusted online pharmacy partner. Quality healthcare delivered to your doorstep.</p>
+                        </div>
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><Link to="/products" className="hover:text-white transition">Buy Medicines</Link></li>
+                                <li><Link to="/upload-prescription" className="hover:text-white transition">Upload Prescription</Link></li>
+                                <li><Link to="/pharmacies" className="hover:text-white transition">Find Pharmacies</Link></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Support</h4>
+                            <ul className="space-y-2 text-sm">
+                                <li><span className="hover:text-white transition">Contact Us</span></li>
+                                <li><span className="hover:text-white transition">FAQs</span></li>
+                                <li><span className="hover:text-white transition">Terms of Service</span></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 className="text-white font-semibold mb-4">Contact</h4>
+                            <p className="text-sm">support@tenamed.com</p>
+                            <p className="text-sm">+251 911 000 000</p>
+                            {isAuthenticated && <p className="text-xs text-gray-500 mt-2">Signed in as {userEmail}</p>}
+                        </div>
                     </div>
-                    <div>
-                        <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-                        <ul className="space-y-2 text-sm">
-                            <li><Link to="/products" className="hover:text-white transition">Buy Medicines</Link></li>
-                            <li><Link to="/upload-prescription" className="hover:text-white transition">Upload Prescription</Link></li>
-                            <li><Link to="/pharmacies" className="hover:text-white transition">Find Pharmacies</Link></li>
-                        </ul>
+                    <div className="container mx-auto px-4 mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
+                        © {new Date().getFullYear()} TenaMed. All rights reserved.
                     </div>
-                    <div>
-                        <h4 className="text-white font-semibold mb-4">Support</h4>
-                        <ul className="space-y-2 text-sm">
-                            <li><span className="hover:text-white transition">Contact Us</span></li>
-                            <li><span className="hover:text-white transition">FAQs</span></li>
-                            <li><span className="hover:text-white transition">Terms of Service</span></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 className="text-white font-semibold mb-4">Contact</h4>
-                        <p className="text-sm">support@tenamed.com</p>
-                        <p className="text-sm">+251 911 000 000</p>
-                        {isAuthenticated && <p className="text-xs text-gray-500 mt-2">Signed in as {userEmail}</p>}
-                    </div>
-                </div>
-                <div className="container mx-auto px-4 mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
-                    © {new Date().getFullYear()} TenaMed. All rights reserved.
-                </div>
-            </footer>
+                </footer>
+            )}
         </div>
     );
 };

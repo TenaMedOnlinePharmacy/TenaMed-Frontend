@@ -1,6 +1,6 @@
-export const SUPPORTED_ROLES = ['customer', 'pharmacist', 'hospital', 'doctor', 'admin'];
+export const SUPPORTED_ROLES = ['customer', 'pharmacy', 'hospital'];
 
-const BUILDER_ROLE_FALLBACK = 'admin';
+const BUILDER_ROLE_FALLBACK = 'customer';
 
 const getEnvFlag = (value) => String(value || '').toLowerCase() === 'true';
 

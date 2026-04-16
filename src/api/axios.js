@@ -4,6 +4,7 @@ const HARDCODED_AUTH_TOKEN = 'eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI4MzI4MDhhNi00OTQ5L
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'https://nonobediently-nonperishing-hilda.ngrok-free.dev/api',
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -12,6 +13,7 @@ const api = axios.create({
 // Add a separate instance for form data if needed (e.g., file uploads)
 export const apiFormData = axios.create({
     baseURL: import.meta.env.VITE_API_URL || 'https://nonobediently-nonperishing-hilda.ngrok-free.dev/api',
+    withCredentials: true,
 });
 
 const attachAuthHeader = (config) => {
@@ -26,12 +28,21 @@ const attachAuthHeader = (config) => {
 api.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
 apiFormData.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
 
+const buildHardcodedAuthHeaders = () => ({
+    headers: {
+        Authorization: `Bearer ${HARDCODED_AUTH_TOKEN}`,
+        'ngrok-skip-browser-warning': 'true',
+    },
+});
+
 // Auth
-export const authRegister = (payload) => api.post('/auth/register', payload);
-export const authLogin = (payload) => api.post('/auth/login', payload);
-export const authRefresh = () => api.post('/auth/refresh');
-export const authLogout = () => api.post('/auth/logout');
-export const authLogoutAll = () => api.post('/auth/logout-all');
+export const authRegister = (payload) => api.post('/auth/register', payload, buildHardcodedAuthHeaders());
+export const authRegisterHospitalOwner = (payload) => apiFormData.post('/auth/register-hospital-owner', payload, buildHardcodedAuthHeaders());
+export const authRegisterPharmacy = (payload) => apiFormData.post('/auth/register-pharmacist', payload, buildHardcodedAuthHeaders());
+export const authLogin = (payload) => api.post('/auth/login', payload, buildHardcodedAuthHeaders());
+export const authRefresh = () => api.post('/auth/refresh', null, buildHardcodedAuthHeaders());
+export const authLogout = () => api.post('/auth/logout', null, buildHardcodedAuthHeaders());
+export const authLogoutAll = () => api.post('/auth/logout-all', null, buildHardcodedAuthHeaders());
 
 // Identity
 export const identityRegister = (payload) => api.post('/identity/register', payload);
@@ -46,7 +57,7 @@ export const adminPopulateRoles = () => api.post('/admin/users/roles/populate');
 
 // Payments
 export const paymentTest = () => api.get('/payments');
-export const paymentInitialize = (payload = {}) => api.post(
+export const paymentInitialize = () => api.post(
     '/payments/initialize',
     {
         orderId: '6169471a-bb60-4887-b5c3-66fffeaa5d2e',

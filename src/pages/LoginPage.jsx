@@ -9,10 +9,8 @@ const roles = SUPPORTED_ROLES;
 
 const redirectByRole = {
     customer: '/',
-    pharmacist: '/pharmacist/dashboard',
+    pharmacy: '/pharmacist/dashboard',
     hospital: '/hospital/dashboard',
-    doctor: '/doctor/prescriptions/new',
-    admin: '/admin/dashboard',
 };
 
 const LoginPage = () => {
@@ -48,18 +46,15 @@ const LoginPage = () => {
                 password: formData.password,
             });
 
-            const accessToken = response?.data?.accessToken || `mock-${activeRole}-token`;
+            const accessToken = response?.data?.accessToken;
+            if (!accessToken) {
+                throw new Error('Missing access token in login response.');
+            }
+
             login(accessToken, formData.email, activeRole);
             navigate(redirectByRole[activeRole] || '/');
         } catch (error) {
-            if (builderModeEnabled || import.meta.env.DEV) {
-                login(`mock-${activeRole}-token`, formData.email, activeRole);
-                navigate(redirectByRole[activeRole] || '/');
-                return;
-            }
-
-            if (activeRole !== 'customer') {
-                // Frontend-only flow: keep non-customer roles testable until backend role auth endpoints are complete.
+            if (builderModeEnabled) {
                 login(`mock-${activeRole}-token`, formData.email, activeRole);
                 navigate(redirectByRole[activeRole] || '/');
                 return;

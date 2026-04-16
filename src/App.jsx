@@ -87,11 +87,11 @@ function App() {
 
           <Route
             path="pharmacist/dashboard"
-            element={<ProtectedRoute roles={['pharmacist']}><PharmacistDashboard /></ProtectedRoute>}
+            element={<ProtectedRoute roles={['pharmacy', 'pharmacist']}><PharmacistDashboard /></ProtectedRoute>}
           />
           <Route
             path="pharmacist/prescription-review"
-            element={<ProtectedRoute roles={['pharmacist']}><PrescriptionReviewPage /></ProtectedRoute>}
+            element={<ProtectedRoute roles={['pharmacy', 'pharmacist']}><PrescriptionReviewPage /></ProtectedRoute>}
           />
 
           <Route path="hospital/register" element={<HospitalRegistrationPage />} />
