@@ -7,7 +7,7 @@ const roles = ['customer', 'pharmacy', 'hospital'];
 
 const roleNamesByRole = {
     customer: ['PATIENT'],
-    hospital: ['HOSPITAL_ADMIN'],
+    hospital: ['HOSPITAL_OWNER'],
 };
 
 const RegisterPage = () => {
@@ -20,6 +20,8 @@ const RegisterPage = () => {
         password: '',
         confirmPassword: '',
         phone: '',
+        city: '',
+        region: '',
         hospitalName: '',
         hospitalLicenseNumber: '',
         pharmacyName: '',
@@ -27,6 +29,14 @@ const RegisterPage = () => {
         pharmacyLicenseNumber: '',
         pharmacyEmail: '',
         pharmacyPhone: '',
+        pharmacyWebsite: '',
+        pharmacyAddressLine1: '',
+        pharmacyCity: '',
+        pharmacyRegion: '',
+        pharmacyType: '',
+        pharmacyOperatingHours: '',
+        pharmacyIs24Hours: false,
+        pharmacyHasDelivery: false,
         legalFile: null,
     });
     const [status, setStatus] = useState('idle');
@@ -36,7 +46,8 @@ const RegisterPage = () => {
     const requiresLegalFile = role === 'pharmacy' || role === 'hospital';
 
     const handleChange = (event) => {
-        setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+        const { name, value, type, checked } = event.target;
+        setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     const handleFileChange = (event) => {
@@ -93,8 +104,21 @@ const RegisterPage = () => {
 
         const firstName = formData.firstName.trim();
         const lastName = formData.lastName.trim();
+        const email = formData.email.trim();
+        const phone = formData.phone.trim();
+        const address = {
+            city: formData.city.trim(),
+            region: formData.region.trim(),
+        };
+        const hasAddressValue = Object.values(address).some((value) => value.length > 0);
         if (!firstName || !lastName) {
             setErrorMsg('First name and last name are required.');
+            setStatus('error');
+            return;
+        }
+
+        if (!email) {
+            setErrorMsg('Email is required.');
             setStatus('error');
             return;
         }
@@ -104,37 +128,45 @@ const RegisterPage = () => {
         try {
             if (role === 'hospital') {
                 const payload = new FormData();
-                payload.append('owner.email', formData.email);
+                payload.append('owner.email', email);
                 payload.append('owner.password', formData.password);
                 payload.append('owner.firstName', firstName);
                 payload.append('owner.lastName', lastName);
-                payload.append('owner.phone', formData.phone.trim());
+                payload.append('owner.phone', phone);
                 payload.append('hospital.name', formData.hospitalName.trim());
                 payload.append('hospital.licenseNumber', formData.hospitalLicenseNumber.trim());
                 payload.append('hospital.licenseImage', formData.legalFile);
                 await authRegisterHospitalOwner(payload);
             } else if (role === 'pharmacy') {
                 const payload = new FormData();
-                payload.append('pharmacist.email', formData.email);
+                payload.append('pharmacist.email', email);
                 payload.append('pharmacist.password', formData.password);
                 payload.append('pharmacist.firstName', firstName);
                 payload.append('pharmacist.lastName', lastName);
-                payload.append('pharmacist.phone', formData.phone.trim());
+                payload.append('pharmacist.phone', phone);
                 payload.append('pharmacy.name', formData.pharmacyName.trim());
                 payload.append('pharmacy.legalName', formData.pharmacyLegalName.trim());
                 payload.append('pharmacy.licenseNumber', formData.pharmacyLicenseNumber.trim());
                 payload.append('pharmacy.email', formData.pharmacyEmail.trim());
                 payload.append('pharmacy.phone', formData.pharmacyPhone.trim());
+                payload.append('pharmacy.website', formData.pharmacyWebsite.trim());
+                payload.append('pharmacy.addressLine1', formData.pharmacyAddressLine1.trim());
+                payload.append('pharmacy.city', formData.pharmacyCity.trim());
+                payload.append('pharmacy.region', formData.pharmacyRegion.trim());
+                payload.append('pharmacy.pharmacyType', formData.pharmacyType.trim());
+                payload.append('pharmacy.operatingHours', formData.pharmacyOperatingHours.trim());
+                payload.append('pharmacy.is24Hours', String(formData.pharmacyIs24Hours));
+                payload.append('pharmacy.hasDelivery', String(formData.pharmacyHasDelivery));
                 payload.append('pharmacy.licenseImage', formData.legalFile);
                 await authRegisterPharmacy(payload);
             } else {
                 await authRegister({
-                    email: formData.email,
+                    email,
                     password: formData.password,
                     firstName,
                     lastName,
-                    phone: formData.phone.trim(),
-                    address: {},
+                    phone,
+                    address: hasAddressValue ? address : {},
                     roleNames: roleNamesByRole[role] || ['PATIENT'],
                 });
             }
@@ -201,6 +233,22 @@ const RegisterPage = () => {
                             <input id="phone" name="phone" type="tel" required={role === 'hospital' || role === 'pharmacy'} className="w-full p-3 border border-gray-300 rounded-lg" value={formData.phone} onChange={handleChange} placeholder="+251 9..." />
                         </div>
 
+                        {role === 'customer' && (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-semibold text-gray-800">Address (Optional)</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                        <input id="city" name="city" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.city} onChange={handleChange} placeholder="Addis Ababa" />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="region" className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                                        <input id="region" name="region" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.region} onChange={handleChange} placeholder="Oromia" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {role === 'hospital' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -236,6 +284,54 @@ const RegisterPage = () => {
                                     <label htmlFor="pharmacyPhone" className="block text-sm font-medium text-gray-700 mb-1">Pharmacy Phone</label>
                                     <input id="pharmacyPhone" name="pharmacyPhone" type="tel" required className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyPhone} onChange={handleChange} placeholder="+251 9..." />
                                 </div>
+                                <div>
+                                    <label htmlFor="pharmacyWebsite" className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                                    <input id="pharmacyWebsite" name="pharmacyWebsite" type="url" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyWebsite} onChange={handleChange} placeholder="https://example.com" />
+                                </div>
+                                <div>
+                                    <label htmlFor="pharmacyAddressLine1" className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+                                    <input id="pharmacyAddressLine1" name="pharmacyAddressLine1" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyAddressLine1} onChange={handleChange} placeholder="Street and building" />
+                                </div>
+                                <div>
+                                    <label htmlFor="pharmacyRegion" className="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                                    <input id="pharmacyRegion" name="pharmacyRegion" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyRegion} onChange={handleChange} placeholder="Oromia" />
+                                </div>
+                                <div>
+                                    <label htmlFor="pharmacyCity" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                                    <input id="pharmacyCity" name="pharmacyCity" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyCity} onChange={handleChange} placeholder="Addis Ababa" />
+                                </div>
+                                <div>
+                                    <label htmlFor="pharmacyType" className="block text-sm font-medium text-gray-700 mb-1">Pharmacy Type</label>
+                                    <input id="pharmacyType" name="pharmacyType" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyType} onChange={handleChange} placeholder="Retail" />
+                                </div>
+                                <div>
+                                    <label htmlFor="pharmacyOperatingHours" className="block text-sm font-medium text-gray-700 mb-1">Operating Hours</label>
+                                    <input id="pharmacyOperatingHours" name="pharmacyOperatingHours" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacyOperatingHours} onChange={handleChange} placeholder="Mon-Sat 8:00-20:00" />
+                                </div>
+                                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <label htmlFor="pharmacyIs24Hours" className="flex items-center gap-2 rounded-lg border border-gray-300 p-3 text-sm text-gray-700">
+                                        <input
+                                            id="pharmacyIs24Hours"
+                                            name="pharmacyIs24Hours"
+                                            type="checkbox"
+                                            checked={formData.pharmacyIs24Hours}
+                                            onChange={handleChange}
+                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        />
+                                        Open 24 hours
+                                    </label>
+                                    <label htmlFor="pharmacyHasDelivery" className="flex items-center gap-2 rounded-lg border border-gray-300 p-3 text-sm text-gray-700">
+                                        <input
+                                            id="pharmacyHasDelivery"
+                                            name="pharmacyHasDelivery"
+                                            type="checkbox"
+                                            checked={formData.pharmacyHasDelivery}
+                                            onChange={handleChange}
+                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                        />
+                                        Offers delivery
+                                    </label>
+                                </div>
                             </div>
                         )}
 
@@ -246,7 +342,7 @@ const RegisterPage = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Lock className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input id="password" name="password" type="password" required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" placeholder="••••••••" value={formData.password} onChange={handleChange} />
+                                    <input id="password" name="password" type="password" minLength={8} required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" placeholder="••••••••" value={formData.password} onChange={handleChange} />
                                 </div>
                             </div>
                             <div>
@@ -255,7 +351,7 @@ const RegisterPage = () => {
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Lock className="h-5 w-5 text-gray-400" />
                                     </div>
-                                    <input id="confirmPassword" name="confirmPassword" type="password" required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
+                                    <input id="confirmPassword" name="confirmPassword" type="password" minLength={8} required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" placeholder="••••••••" value={formData.confirmPassword} onChange={handleChange} />
                                 </div>
                             </div>
                         </div>

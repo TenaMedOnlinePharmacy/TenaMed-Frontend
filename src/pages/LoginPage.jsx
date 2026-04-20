@@ -60,7 +60,7 @@ const LoginPage = () => {
                 return;
             }
 
-            const message = error?.response?.data?.message || 'Login failed. Please check your credentials.';
+            const message = error?.response?.data?.message || 'Something went wrong. Please try again later.';
             setErrorMsg(message);
             setStatus('error');
         }
