@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Truck, ShieldCheck, Heart, Share2 } from 'lucide-react';
 import { medicineGetById } from '../api/axios';
 
@@ -8,14 +8,17 @@ import { useCart } from '../context/CartContext';
 const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
 
 const mapMedicineToProduct = (medicine) => {
-    const price = Number(medicine?.doseValue || 0);
+    const price = Number(medicine?.price ?? medicine?.doseValue ?? 0);
 
     return {
-        id: medicine?.id,
-        name: medicine?.name || 'Unnamed medicine',
-        category: medicine?.category || 'General',
-        pharmacy: 'TenaMED Partner Pharmacy',
+        id: medicine?.id || medicine?.medicineId || medicine?.medicineName || 'medicine',
+        name: medicine?.medicineName || medicine?.name || 'Unnamed medicine',
+        category: medicine?.medicineCategory || medicine?.category || 'General',
+        pharmacy: medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy',
         description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
+        indications: medicine?.indications || '',
+        contraindications: medicine?.contraindications || '',
+        sideEffects: medicine?.sideEffects || '',
         price: Number.isFinite(price) && price > 0 ? price : 0,
         image: FALLBACK_MEDICINE_IMAGE,
         inStock: true,
@@ -24,6 +27,7 @@ const mapMedicineToProduct = (medicine) => {
 
 const ProductDetailsPage = () => {
     const { id } = useParams();
+    const location = useLocation();
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
@@ -32,6 +36,18 @@ const ProductDetailsPage = () => {
 
     useEffect(() => {
         let isMounted = true;
+        const routedProduct = location?.state?.product;
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
+
+        if (routedProduct) {
+            setProduct(routedProduct);
+            if (!isUuid) {
+                setIsLoading(false);
+                return () => {
+                    isMounted = false;
+                };
+            }
+        }
 
         const loadMedicine = async () => {
             setIsLoading(true);
@@ -39,7 +55,17 @@ const ProductDetailsPage = () => {
             try {
                 const response = await medicineGetById(id);
                 if (isMounted) {
-                    setProduct(mapMedicineToProduct(response?.data));
+                    const payload = response?.data;
+                    const rows = Array.isArray(payload) ? payload : payload ? [payload] : [];
+
+                    if (rows.length === 0) {
+                        setProduct(null);
+                        return;
+                    }
+
+                    const mappedProduct = mapMedicineToProduct(rows[0]);
+
+                    setProduct(mappedProduct);
                 }
             } catch {
                 if (isMounted) {
@@ -53,13 +79,17 @@ const ProductDetailsPage = () => {
         };
 
         if (id) {
-            loadMedicine();
+            if (isUuid) {
+                loadMedicine();
+            } else {
+                setIsLoading(false);
+            }
         }
 
         return () => {
             isMounted = false;
         };
-    }, [id]);
+    }, [id, location.state]);
 
     const handleAddToCart = () => {
         addToCart(product, quantity);
@@ -120,7 +150,9 @@ const ProductDetailsPage = () => {
                                 <div>
                                     <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{product.category}</span>
                                     <h1 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{product.name}</h1>
-                                    <p className="text-sm text-gray-500">Sold by <span className="font-semibold text-blue-600">{product.pharmacy}</span></p>
+                                    <p className="text-sm text-gray-500">
+                                        Sold by <span className="font-semibold text-blue-600">{product.pharmacy}</span>
+                                    </p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition">
@@ -169,8 +201,25 @@ const ProductDetailsPage = () => {
                             <div className="mt-8">
                                 <h3 className="text-lg font-bold text-gray-900 mb-3">Product Description</h3>
                                 <p className="text-gray-600 leading-relaxed mb-6">
-                                    {product.description} Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+                                    {product.description}
                                 </p>
+
+                                {(product.contraindications || product.sideEffects) && (
+                                    <div className="mb-6 space-y-3 text-sm">
+                                        {product.contraindications && (
+                                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                                                <span className="font-semibold">Contraindications: </span>
+                                                {product.contraindications}
+                                            </div>
+                                        )}
+                                        {product.sideEffects && (
+                                            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">
+                                                <span className="font-semibold">Side Effects: </span>
+                                                {product.sideEffects}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">

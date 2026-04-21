@@ -11,13 +11,16 @@ const mapMedicineToProduct = (medicine, index) => {
     const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
     const pharmacyName = medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy';
     const category = medicine?.medicineCategory || medicine?.category || 'General';
-    const id = medicine?.id || medicine?.medicineId || `${medicineName}-${pharmacyName}-${index}`;
+    const medicineId = medicine?.medicineId || medicine?.id;
+    const id = medicineId || `${medicineName}-${pharmacyName}-${index}`;
+    const routeId = medicineId || `name-${encodeURIComponent(medicineName)}-${index}`;
     const hasStockInfo = typeof medicine?.availableQuantity === 'number';
     const inStock = hasStockInfo ? medicine.availableQuantity > 0 : true;
 
     return {
         id,
-        medicineId: medicine?.medicineId || medicine?.id,
+        routeId,
+        medicineId,
         pharmacyId: medicine?.pharmacyId,
         name: medicineName,
         category,
@@ -156,7 +159,7 @@ const ProductsPage = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredProducts.map((product) => (
                                     <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
-                                        <Link to={`/products/${product.id}`} className="block h-48 overflow-hidden relative bg-gray-100">
+                                        <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block h-48 overflow-hidden relative bg-gray-100">
                                             <img
                                                 src={product.image}
                                                 alt={product.name}
@@ -170,7 +173,7 @@ const ProductsPage = () => {
                                         </Link>
                                         <div className="p-5">
                                             <div className="text-xs font-medium text-blue-600 mb-1">{product.category}</div>
-                                            <Link to={`/products/${product.id}`} className="block">
+                                            <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block">
                                                 <h3 className="font-bold text-gray-900 mb-1 hover:text-blue-600 transition">{product.name}</h3>
                                             </Link>
                                             <p className="text-sm text-gray-500 mb-3">Sold by: {product.pharmacy}</p>
