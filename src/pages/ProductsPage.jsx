@@ -1,11 +1,89 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, ShoppingCart } from 'lucide-react';
-import { products, categories } from '../data/mockProducts';
+import { medicineGetAll, medicineSearch } from '../api/axios';
+import { useCart } from '../context/CartContext';
+
+const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
+
+const mapMedicineToProduct = (medicine, index) => {
+    const price = Number(medicine?.price ?? medicine?.doseValue ?? 0);
+    const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
+    const pharmacyName = medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy';
+    const category = medicine?.medicineCategory || medicine?.category || 'General';
+    const id = medicine?.id || medicine?.medicineId || `${medicineName}-${pharmacyName}-${index}`;
+    const hasStockInfo = typeof medicine?.availableQuantity === 'number';
+    const inStock = hasStockInfo ? medicine.availableQuantity > 0 : true;
+
+    return {
+        id,
+        medicineId: medicine?.medicineId || medicine?.id,
+        pharmacyId: medicine?.pharmacyId,
+        name: medicineName,
+        category,
+        pharmacy: pharmacyName,
+        description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
+        price: Number.isFinite(price) && price > 0 ? price : 0,
+        image: FALLBACK_MEDICINE_IMAGE,
+        inStock,
+    };
+};
 
 const ProductsPage = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [products, setProducts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [errorMsg, setErrorMsg] = useState('');
+    const { addToCart } = useCart();
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadMedicines = async () => {
+            setIsLoading(true);
+            setErrorMsg('');
+
+            try {
+                const hasSearch = Boolean(searchQuery.trim());
+                const hasCategory = selectedCategory !== 'All';
+
+                const response = hasSearch || hasCategory
+                    ? await medicineSearch({
+                        keyword: hasSearch ? searchQuery.trim() : undefined,
+                        categoryName: hasCategory ? selectedCategory : undefined,
+                    })
+                    : await medicineGetAll();
+
+                const rows = Array.isArray(response?.data) ? response.data : [];
+                if (isMounted) {
+                    setProducts(rows.map((row, index) => mapMedicineToProduct(row, index)));
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setProducts([]);
+                    setErrorMsg(error?.response?.data?.error || 'Unable to load medicines right now.');
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadMedicines();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [searchQuery, selectedCategory]);
+
+    const categories = useMemo(() => {
+        const dynamicCategories = products
+            .map((product) => product.category)
+            .filter(Boolean);
+        return ['All', ...new Set(dynamicCategories)];
+    }, [products]);
 
     const filteredProducts = products.filter(product => {
         const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -65,7 +143,16 @@ const ProductsPage = () => {
 
                     {/* Product Grid */}
                     <div className="flex-1">
-                        {filteredProducts.length > 0 ? (
+                        {isLoading ? (
+                            <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
+                                <p className="text-gray-500">Loading medicines...</p>
+                            </div>
+                        ) : errorMsg ? (
+                            <div className="text-center py-20 bg-white rounded-xl border border-red-100">
+                                <h3 className="text-lg font-medium text-red-700">Failed to load medicines</h3>
+                                <p className="text-red-500">{errorMsg}</p>
+                            </div>
+                        ) : filteredProducts.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredProducts.map((product) => (
                                     <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
@@ -91,6 +178,7 @@ const ProductsPage = () => {
                                             <div className="flex items-center justify-between mt-4">
                                                 <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
                                                 <button
+                                                    onClick={() => addToCart(product, 1)}
                                                     disabled={!product.inStock}
                                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${product.inStock
                                                         ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'

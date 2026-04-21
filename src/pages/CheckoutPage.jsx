@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
-import { paymentInitialize } from '../api/axios';
+import { cartCheckout, paymentInitialize } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { saveOrder } from '../data/orderStore';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
@@ -41,7 +41,13 @@ const CheckoutPage = () => {
             setIsProcessing(true);
 
             try {
-                const response = await paymentInitialize();
+                const checkoutResponse = await cartCheckout();
+                const firstOrderId = checkoutResponse?.data?.orderIds?.[0];
+                if (!firstOrderId) {
+                    throw new Error('No order id returned from cart checkout');
+                }
+
+                const response = await paymentInitialize(firstOrderId);
 
                 const checkoutUrl = response?.data?.checkout_url;
                 if (!checkoutUrl) {
@@ -78,22 +84,32 @@ const CheckoutPage = () => {
         }
 
         setIsProcessing(true);
-        setTimeout(() => {
-            saveOrder({
-                id: `ORD-${Math.floor(Math.random() * 90000 + 10000)}`,
-                customer: `${shippingData.firstName} ${shippingData.lastName}`.trim(),
-                date: new Date().toISOString().slice(0, 10),
-                total,
-                status: 'Pending',
-                items: cartItems.map((item) => ({
-                    name: item.name,
-                    quantity: item.quantity,
-                })),
-            });
+        try {
+            await cartCheckout();
             clearCart();
             navigate('/payment-success', { state: { total } });
+        } catch (error) {
+            if (shouldUseBuilderFallback(error)) {
+                saveOrder({
+                    id: `ORD-${Math.floor(Math.random() * 90000 + 10000)}`,
+                    customer: `${shippingData.firstName} ${shippingData.lastName}`.trim(),
+                    date: new Date().toISOString().slice(0, 10),
+                    total,
+                    status: 'Pending',
+                    items: cartItems.map((item) => ({
+                        name: item.name,
+                        quantity: item.quantity,
+                    })),
+                });
+                clearCart();
+                navigate('/payment-success', { state: { total } });
+            } else {
+                const message = error?.response?.data?.error || error?.response?.data?.message || 'Checkout failed. Please try again.';
+                setErrorMsg(message);
+            }
+        } finally {
             setIsProcessing(false);
-        }, 1500);
+        }
     };
 
     return (

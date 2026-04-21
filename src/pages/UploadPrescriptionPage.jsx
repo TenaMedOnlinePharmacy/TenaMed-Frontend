@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ocrUploadPrescription } from '../api/axios';
+import { ocrGetPipelineStatus, ocrUploadPrescription } from '../api/axios';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
 const UploadPrescriptionPage = () => {
@@ -10,6 +10,43 @@ const UploadPrescriptionPage = () => {
     const [status, setStatus] = useState('idle'); // idle, uploading, success, error
     const [errorMsg, setErrorMsg] = useState('');
     const [matches, setMatches] = useState([]);
+
+    const delay = (ms) => new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+
+    const pollPipelineStatus = async (prescriptionId) => {
+        const maxAttempts = 15;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+            const response = await ocrGetPipelineStatus(prescriptionId);
+            const data = response?.data || {};
+            const status = String(data.status || '').toUpperCase();
+
+            if (status === 'FINISHED') {
+                return {
+                    done: true,
+                    matches: Array.isArray(data.inventoryMatches) ? data.inventoryMatches : [],
+                };
+            }
+
+            if (status === 'FAILED' || status === 'NOT_FOUND') {
+                return {
+                    done: true,
+                    error: data.message || 'Prescription pipeline failed.',
+                    matches: [],
+                };
+            }
+
+            await delay(1500);
+        }
+
+        return {
+            done: true,
+            matches: [],
+            error: 'Prescription processing is taking longer than expected. Please check again shortly.',
+        };
+    };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -55,7 +92,21 @@ const UploadPrescriptionPage = () => {
             const uploadResponse = await ocrUploadPrescription(file);
             console.log('OCR Upload Response:', uploadResponse);
             const uploadData = uploadResponse?.data;
-            setMatches(Array.isArray(uploadData) ? uploadData : []);
+
+            if (!uploadData?.prescriptionId) {
+                setMatches(Array.isArray(uploadData) ? uploadData : []);
+                setStatus('success');
+                return;
+            }
+
+            const pipelineResult = await pollPipelineStatus(uploadData.prescriptionId);
+            if (pipelineResult.error) {
+                setErrorMsg(pipelineResult.error);
+                setStatus('error');
+                return;
+            }
+
+            setMatches(pipelineResult.matches || []);
             setStatus('success');
         } catch (error) {
             if (shouldUseBuilderFallback(error)) {

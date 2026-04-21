@@ -1,21 +1,78 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ShoppingCart, Truck, ShieldCheck, Heart, Share2 } from 'lucide-react';
-import { products } from '../data/mockProducts';
+import { medicineGetById } from '../api/axios';
 
 import { useCart } from '../context/CartContext';
 
+const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
+
+const mapMedicineToProduct = (medicine) => {
+    const price = Number(medicine?.doseValue || 0);
+
+    return {
+        id: medicine?.id,
+        name: medicine?.name || 'Unnamed medicine',
+        category: medicine?.category || 'General',
+        pharmacy: 'TenaMED Partner Pharmacy',
+        description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
+        price: Number.isFinite(price) && price > 0 ? price : 0,
+        image: FALLBACK_MEDICINE_IMAGE,
+        inStock: true,
+    };
+};
+
 const ProductDetailsPage = () => {
     const { id } = useParams();
-    const product = products.find(p => p.id === parseInt(id));
+    const [product, setProduct] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
     const { addToCart } = useCart();
     const navigate = useNavigate();
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadMedicine = async () => {
+            setIsLoading(true);
+
+            try {
+                const response = await medicineGetById(id);
+                if (isMounted) {
+                    setProduct(mapMedicineToProduct(response?.data));
+                }
+            } catch {
+                if (isMounted) {
+                    setProduct(null);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        if (id) {
+            loadMedicine();
+        }
+
+        return () => {
+            isMounted = false;
+        };
+    }, [id]);
 
     const handleAddToCart = () => {
         addToCart(product, quantity);
         navigate('/cart');
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                <p className="text-gray-500">Loading medicine details...</p>
+            </div>
+        );
+    }
 
     if (!product) {
         return (
