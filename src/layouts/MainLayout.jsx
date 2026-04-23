@@ -54,14 +54,14 @@ const MainLayout = () => {
             <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100 backdrop-blur-lg bg-opacity-90">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     {/* Logo */}
-                    <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">
                         TenaMed
                     </Link>
 
                     {/* Desktop Nav */}
                     <nav className="hidden md:flex items-center space-x-8">
                         {navItems.map((item) => (
-                            <Link key={item.to} to={item.to} className="text-gray-600 hover:text-blue-600 font-medium transition">
+                            <Link key={item.to} to={item.to} className="text-gray-600 hover:text-emerald-600 font-medium transition">
                                 {item.label}
                             </Link>
                         ))}
@@ -69,7 +69,7 @@ const MainLayout = () => {
 
                     {/* Actions */}
                     <div className="flex items-center space-x-4">
-                        <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-1.5 focus-within:ring-2 focus-within:ring-blue-100 transition">
+                        <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-1.5 focus-within:ring-2 focus-within:ring-emerald-100 transition">
                             <Search className="w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
@@ -80,7 +80,7 @@ const MainLayout = () => {
 
                         {roleKey === 'customer' && (
                             <Link to="/cart" onClick={refreshCart} className="relative p-2 hover:bg-gray-100 rounded-full transition group">
-                                <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-blue-600" />
+                                <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-emerald-600" />
                                 {getCartCount() > 0 && (
                                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                                         {getCartCount()}
@@ -99,7 +99,7 @@ const MainLayout = () => {
                                 </button>
                             </div>
                         ) : (
-                            <Link to="/login" className="hidden md:flex items-center space-x-2 bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition shadow-md hover:shadow-lg">
+                            <Link to="/login" className="hidden md:flex items-center space-x-2 bg-emerald-600 text-white px-5 py-2 rounded-full hover:bg-emerald-700 transition shadow-md hover:shadow-lg">
                                 <span>Sign In</span>
                             </Link>
                         )}
@@ -121,7 +121,7 @@ const MainLayout = () => {
                 </div>
                 {mobileMenuOpen && (
                     <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
-                        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-blue-100 transition">
+                        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-emerald-100 transition">
                             <Search className="w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
@@ -135,7 +135,7 @@ const MainLayout = () => {
                                 <Link
                                     key={item.to}
                                     to={item.to}
-                                    className="text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-lg font-medium transition"
+                                    className="text-gray-700 hover:text-emerald-600 hover:bg-gray-50 px-3 py-2 rounded-lg font-medium transition"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {item.label}
@@ -183,7 +183,7 @@ const MainLayout = () => {
                         ) : (
                             <Link
                                 to="/login"
-                                className="flex items-center justify-center bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition shadow-md"
+                                className="flex items-center justify-center bg-emerald-600 text-white px-5 py-2 rounded-lg hover:bg-emerald-700 transition shadow-md"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
                                 Sign In

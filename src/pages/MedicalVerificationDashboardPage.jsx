@@ -37,7 +37,7 @@ const MedicalVerificationDashboardPage = () => {
                         <tbody className="divide-y divide-gray-100">
                             {queue.map((entry) => (
                                 <tr key={entry.id} className="hover:bg-gray-50">
-                                    <td className="p-4 font-semibold text-blue-600">{entry.id}</td>
+                                    <td className="p-4 font-semibold text-emerald-600">{entry.id}</td>
                                     <td className="p-4 text-gray-800">{entry.name}</td>
                                     <td className="p-4 text-gray-600">{entry.type}</td>
                                     <td className="p-4 text-gray-600">{entry.docs}</td>

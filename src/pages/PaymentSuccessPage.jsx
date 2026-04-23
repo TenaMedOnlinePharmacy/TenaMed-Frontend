@@ -22,7 +22,7 @@ const PaymentSuccessPage = () => {
                     </p>
                     <button
                         onClick={() => navigate('/')}
-                        className="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition"
+                        className="bg-emerald-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-emerald-700 transition"
                     >
                         Back to Home
                     </button>

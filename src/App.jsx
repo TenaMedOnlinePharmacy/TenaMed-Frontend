@@ -23,6 +23,7 @@ import EPrescriptionPage from './pages/EPrescriptionPage';
 import MedicalVerificationDashboardPage from './pages/MedicalVerificationDashboardPage';
 import LoadingSpinner from './components/LoadingSpinner';
 import { isDevBypassAllowAllRoles } from './config/devBuilderMode';
+import LoadingPage from './pages/LoadingPage';
 
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
@@ -56,6 +57,7 @@ function App() {
   return (
     <Suspense fallback={<LoadingSpinner />}>
       <Routes>
+        <Route path="/loading" element={<LoadingPage />} />
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductsPage />} />

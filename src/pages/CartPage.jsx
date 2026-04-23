@@ -25,7 +25,7 @@ const CartPage = () => {
                     <p className="text-gray-600 mb-8">Looks like you haven't added any medicines yet.</p>
                     <Link
                         to="/products"
-                        className="inline-flex items-center bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition"
+                        className="inline-flex items-center bg-emerald-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-emerald-700 transition"
                     >
                         Start Shopping
                         <ArrowRight className="ml-2 w-5 h-5" />
@@ -69,7 +69,7 @@ const CartPage = () => {
                                             <div>
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{item.category}</span>
+                                                        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">{item.category}</span>
                                                         <h3 className="font-bold text-gray-900 mt-1">{item.name}</h3>
                                                         <p className="text-sm text-gray-500">Sold by: {item.pharmacy}</p>
                                                     </div>
@@ -135,22 +135,22 @@ const CartPage = () => {
                             <div className="border-t border-gray-100 pt-4 mb-8">
                                 <div className="flex justify-between items-center">
                                     <span className="font-bold text-gray-900">Total</span>
-                                    <span className="text-2xl font-bold text-blue-600">${total.toFixed(2)}</span>
+                                    <span className="text-2xl font-bold text-emerald-600">${total.toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            <Link to="/checkout" className="block w-full text-center bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                            <Link to="/checkout" className="block w-full text-center bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg shadow-emerald-200">
                                 Proceed to Checkout
                             </Link>
 
                             <div className="mt-6 text-center">
-                                <Link to="/products" className="text-sm text-gray-500 hover:text-blue-600 font-medium">
+                                <Link to="/products" className="text-sm text-gray-500 hover:text-emerald-600 font-medium">
                                     or Continue Shopping
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="mt-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-sm text-blue-800">
+                        <div className="mt-6 bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-sm text-emerald-800">
                             <p className="flex gap-2">
                                 <span className="font-bold">Note:</span>
                                 Some medicines may require a valid prescription upload before checkout.

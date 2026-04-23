@@ -4,7 +4,7 @@ import { getOrders } from '../data/orderStore';
 
 const statusClassMap = {
     Pending: 'bg-yellow-100 text-yellow-700',
-    Accepted: 'bg-blue-100 text-blue-700',
+    Accepted: 'bg-emerald-100 text-emerald-700',
     Dispatched: 'bg-indigo-100 text-indigo-700',
     Delivered: 'bg-green-100 text-green-700',
     Rejected: 'bg-red-100 text-red-700',
@@ -48,7 +48,7 @@ const OrderTrackingPage = () => {
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search by order ID, status..."
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
                             />
                         </div>
                     </div>
@@ -67,7 +67,7 @@ const OrderTrackingPage = () => {
                             <tbody className="divide-y divide-gray-100">
                                 {filtered.map((order) => (
                                     <tr key={order.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-semibold text-blue-600">{order.id}</td>
+                                        <td className="p-4 font-semibold text-emerald-600">{order.id}</td>
                                         <td className="p-4 text-gray-600">{order.date}</td>
                                         <td className="p-4 text-gray-600">{order.items.length} items</td>
                                         <td className="p-4 font-medium text-gray-900">${order.total.toFixed(2)}</td>

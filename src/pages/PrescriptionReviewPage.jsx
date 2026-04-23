@@ -60,7 +60,7 @@ const PrescriptionReviewPage = () => {
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search prescriptions..."
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
                             />
                         </div>
                     </div>
@@ -81,7 +81,7 @@ const PrescriptionReviewPage = () => {
                             <tbody className="divide-y divide-gray-100">
                                 {filtered.map((row) => (
                                     <tr key={row.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-semibold text-blue-600">{row.id}</td>
+                                        <td className="p-4 font-semibold text-emerald-600">{row.id}</td>
                                         <td className="p-4 text-gray-700">{row.patient}</td>
                                         <td className="p-4 text-gray-600">{row.uploadedAt}</td>
                                         <td className="p-4">
@@ -91,7 +91,7 @@ const PrescriptionReviewPage = () => {
                                             </span>
                                         </td>
                                         <td className="p-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${row.risk === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
+                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${row.risk === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                                 {row.risk}
                                             </span>
                                         </td>

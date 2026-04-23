@@ -120,9 +120,9 @@ const CheckoutPage = () => {
                 {/* Progress Indicators */}
                 <div className="flex justify-center mb-12">
                     <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>1</div>
-                        <div className={`w-20 h-1 bg-gray-200 mx-2 ${step >= 2 ? 'bg-blue-600' : ''}`}></div>
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 1 ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'}`}>1</div>
+                        <div className={`w-20 h-1 bg-gray-200 mx-2 ${step >= 2 ? 'bg-emerald-600' : ''}`}></div>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition ${step >= 2 ? 'bg-emerald-600 text-white' : 'bg-gray-200 text-gray-500'}`}>2</div>
                     </div>
                 </div>
 
@@ -132,7 +132,7 @@ const CheckoutPage = () => {
                             {step === 1 ? (
                                 <div>
                                     <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                        <MapPin className="text-blue-600" /> Shipping Information
+                                        <MapPin className="text-emerald-600" /> Shipping Information
                                     </h2>
                                     <form
                                         className="space-y-4"
@@ -147,7 +147,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     type="text"
                                                     required
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     placeholder="John"
                                                     value={shippingData.firstName}
                                                     onChange={(e) => setShippingData({ ...shippingData, firstName: e.target.value })}
@@ -158,7 +158,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     type="text"
                                                     required
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     placeholder="Doe"
                                                     value={shippingData.lastName}
                                                     onChange={(e) => setShippingData({ ...shippingData, lastName: e.target.value })}
@@ -170,7 +170,7 @@ const CheckoutPage = () => {
                                             <input
                                                 type="text"
                                                 required
-                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                 placeholder="123 Bole Road"
                                                 value={shippingData.address}
                                                 onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })}
@@ -182,7 +182,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     type="text"
                                                     required
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     placeholder="Addis Ababa"
                                                     value={shippingData.city}
                                                     onChange={(e) => setShippingData({ ...shippingData, city: e.target.value })}
@@ -193,7 +193,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     type="email"
                                                     required
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     placeholder="you@example.com"
                                                     value={shippingData.email}
                                                     onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
@@ -206,7 +206,7 @@ const CheckoutPage = () => {
                                                 <input
                                                     type="tel"
                                                     required
-                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none"
                                                     placeholder="+251 9..."
                                                     value={shippingData.phone}
                                                     onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
@@ -214,7 +214,7 @@ const CheckoutPage = () => {
                                             </div>
                                         </div>
                                         <div className="pt-4">
-                                            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition">
+                                            <button type="submit" className="w-full bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 transition">
                                                 Continue to Payment
                                             </button>
                                         </div>
@@ -227,20 +227,20 @@ const CheckoutPage = () => {
                                             <ArrowLeft size={20} />
                                         </button>
                                         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                            <CreditCard className="text-blue-600" /> Payment Details
+                                            <CreditCard className="text-emerald-600" /> Payment Details
                                         </h2>
                                     </div>
 
                                     <form onSubmit={handlePlaceOrder} className="space-y-6">
                                         <div className="space-y-4">
-                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
                                                 <input
                                                     type="radio"
                                                     name="payment"
                                                     value="card"
                                                     checked={paymentMethod === 'card'}
                                                     onChange={(e) => setPaymentMethod(e.target.value)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                                                 />
                                                 <div className="ml-4 flex-1 flex items-center justify-between">
                                                     <span className="font-semibold text-gray-900">Credit / Debit Card</span>
@@ -251,14 +251,14 @@ const CheckoutPage = () => {
                                                 </div>
                                             </label>
 
-                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
                                                 <input
                                                     type="radio"
                                                     name="payment"
                                                     value="chapa"
                                                     checked={paymentMethod === 'chapa'}
                                                     onChange={(e) => setPaymentMethod(e.target.value)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                                                 />
                                                 <div className="ml-4 flex-1">
                                                     <span className="font-semibold text-gray-900">Chapa</span>
@@ -266,14 +266,14 @@ const CheckoutPage = () => {
                                                 </div>
                                             </label>
 
-                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50">
+                                            <label className="flex items-center p-4 border rounded-xl cursor-pointer transition hover:bg-gray-50 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
                                                 <input
                                                     type="radio"
                                                     name="payment"
                                                     value="cash"
                                                     checked={paymentMethod === 'cash'}
                                                     onChange={(e) => setPaymentMethod(e.target.value)}
-                                                    className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                                                    className="w-4 h-4 text-emerald-600 border-gray-300 focus:ring-emerald-500"
                                                 />
                                                 <div className="ml-4 flex-1">
                                                     <span className="font-semibold text-gray-900">Cash on Delivery</span>
@@ -312,8 +312,8 @@ const CheckoutPage = () => {
                                             disabled={isProcessing}
                                             className={`w-full py-4 rounded-xl font-bold transition shadow-lg mt-6 ${
                                                 isProcessing
-                                                    ? 'bg-blue-400 text-white cursor-not-allowed'
-                                                    : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200'
+                                                    ? 'bg-emerald-400 text-white cursor-not-allowed'
+                                                    : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'
                                             }`}
                                         >
                                             {isProcessing ? 'Processing...' : `Place Order ($${total.toFixed(2)})`}
@@ -352,7 +352,7 @@ const CheckoutPage = () => {
                                     </div>
                                     <div className="flex justify-between font-bold text-gray-900 pt-2 text-lg">
                                         <span>Total</span>
-                                        <span className="text-blue-600">${total.toFixed(2)}</span>
+                                        <span className="text-emerald-600">${total.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

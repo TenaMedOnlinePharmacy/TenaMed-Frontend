@@ -57,7 +57,7 @@ const HospitalRegistrationPage = () => {
                         </div>
                     </div>
 
-                    <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">Submit for Verification</button>
+                    <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700">Submit for Verification</button>
 
                     {submitted && (
                         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">

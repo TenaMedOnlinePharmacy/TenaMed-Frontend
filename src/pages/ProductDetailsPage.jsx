@@ -137,7 +137,7 @@ const ProductDetailsPage = () => {
                 <div className="text-center">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
                     <p className="text-gray-600 mb-6">The medicine you are looking for does not exist or has been removed.</p>
-                    <Link to="/products" className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium">
+                    <Link to="/products" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium">
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Back to Medicines
                     </Link>
@@ -151,9 +151,9 @@ const ProductDetailsPage = () => {
             <div className="container mx-auto px-4">
                 {/* Breadcrumb */}
                 <nav className="flex items-center text-sm text-gray-500 mb-8">
-                    <Link to="/" className="hover:text-blue-600">Home</Link>
+                    <Link to="/" className="hover:text-emerald-600">Home</Link>
                     <span className="mx-2">/</span>
-                    <Link to="/products" className="hover:text-blue-600">Medicines</Link>
+                    <Link to="/products" className="hover:text-emerald-600">Medicines</Link>
                     <span className="mx-2">/</span>
                     <span className="text-gray-900 font-medium truncate">{product.name}</span>
                 </nav>
@@ -179,7 +179,7 @@ const ProductDetailsPage = () => {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{product.category}</span>
+                                        <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">{product.category}</span>
                                         {product.prescriptionRequired && (
                                             <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800">
                                                 Prescription Required
@@ -188,14 +188,14 @@ const ProductDetailsPage = () => {
                                     </div>
                                     <h1 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{product.name}</h1>
                                     <p className="text-sm text-gray-500">
-                                        Sold by <span className="font-semibold text-blue-600">{product.pharmacy}</span>
+                                        Sold by <span className="font-semibold text-emerald-600">{product.pharmacy}</span>
                                     </p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition">
                                         <Heart className="w-6 h-6" />
                                     </button>
-                                    <button className="p-2 text-gray-400 hover:text-blue-600 rounded-full hover:bg-gray-100 transition">
+                                    <button className="p-2 text-gray-400 hover:text-emerald-600 rounded-full hover:bg-gray-100 transition">
                                         <Share2 className="w-6 h-6" />
                                     </button>
                                 </div>
@@ -225,7 +225,7 @@ const ProductDetailsPage = () => {
                                     </div>
                                     <button
                                         onClick={handleAddToCart}
-                                        className="flex-1 bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 active:bg-blue-800 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                                         disabled={!product.inStock}
                                     >
                                         <ShoppingCart className="w-5 h-5" />
@@ -242,7 +242,7 @@ const ProductDetailsPage = () => {
                                 </p>
 
                                 {product.indications && (
-                                    <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                                    <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
                                         <span className="font-semibold">Indications: </span>
                                         {product.indications}
                                     </div>
@@ -267,7 +267,7 @@ const ProductDetailsPage = () => {
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                        <Truck className="w-6 h-6 text-blue-600" />
+                                        <Truck className="w-6 h-6 text-emerald-600" />
                                         <div>
                                             <p className="text-xs text-gray-500">Delivery</p>
                                             <p className="text-sm font-semibold text-gray-900">Estimated 2-4 hours</p>

@@ -165,10 +165,10 @@ const UploadPrescriptionPage = () => {
                             </div>
                         )}
                         <div className="flex justify-center gap-4">
-                            <button onClick={() => { setFile(null); setMatches([]); setStatus('idle'); }} className="text-blue-600 hover:bg-blue-50 px-6 py-2 rounded-full font-medium transition">
+                            <button onClick={() => { setFile(null); setMatches([]); setStatus('idle'); }} className="text-emerald-600 hover:bg-emerald-50 px-6 py-2 rounded-full font-medium transition">
                                 Upload Another
                             </button>
-                            <Link to="/" className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition">
+                            <Link to="/" className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold hover:bg-emerald-700 transition">
                                 Back to Home
                             </Link>
                         </div>
@@ -179,7 +179,7 @@ const UploadPrescriptionPage = () => {
                             <button
                                 type="button"
                                 onClick={() => cameraInputRef.current?.click()}
-                                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+                                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
                             >
                                 Take Photo
                             </button>
@@ -201,7 +201,7 @@ const UploadPrescriptionPage = () => {
                             />
                             {file ? (
                                 <div className="flex flex-col items-center">
-                                    <FileText className="w-16 h-16 text-blue-500 mb-4" />
+                                    <FileText className="w-16 h-16 text-emerald-500 mb-4" />
                                     <p className="font-medium text-gray-900 text-lg">{file.name}</p>
                                     <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                     <button
@@ -234,7 +234,7 @@ const UploadPrescriptionPage = () => {
                                 className={`w-full py-4 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2 text-white
                                     ${!file || status === 'uploading'
                                         ? 'bg-gray-300 cursor-not-allowed shadow-none'
-                                        : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
+                                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
                                     }`}
                             >
                                 {status === 'uploading' ? (

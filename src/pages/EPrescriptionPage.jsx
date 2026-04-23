@@ -90,7 +90,7 @@ const EPrescriptionPage = () => {
                             <input value={dosage} onChange={(e) => setDosage(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg" placeholder="Example: 500mg twice daily" />
                             <label className="block text-sm font-medium text-gray-700">Instructions</label>
                             <textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} required className="w-full p-2.5 border border-gray-300 rounded-lg min-h-28" placeholder="Usage instructions and precautions" />
-                            <button className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700">
+                            <button className="w-full inline-flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-700">
                                 <Send className="w-4 h-4" /> Submit Digital Prescription
                             </button>
                         </div>

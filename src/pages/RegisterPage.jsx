@@ -193,7 +193,7 @@ const RegisterPage = () => {
                             key={entry}
                             type="button"
                             onClick={() => setRole(entry)}
-                            className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             {entry}
                         </button>
@@ -316,7 +316,7 @@ const RegisterPage = () => {
                                             type="checkbox"
                                             checked={formData.pharmacyIs24Hours}
                                             onChange={handleChange}
-                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                            className="h-4 w-4 text-emerald-600 border-gray-300 rounded"
                                         />
                                         Open 24 hours
                                     </label>
@@ -327,7 +327,7 @@ const RegisterPage = () => {
                                             type="checkbox"
                                             checked={formData.pharmacyHasDelivery}
                                             onChange={handleChange}
-                                            className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                            className="h-4 w-4 text-emerald-600 border-gray-300 rounded"
                                         />
                                         Offers delivery
                                     </label>
@@ -357,13 +357,13 @@ const RegisterPage = () => {
                         </div>
 
                         {requiresLegalFile && (
-                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                                <label className="block text-sm font-medium text-blue-900 mb-2">Legal / Credential Documents</label>
-                                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-blue-300 border-dashed rounded-md bg-white relative">
+                            <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                                <label className="block text-sm font-medium text-emerald-900 mb-2">Legal / Credential Documents</label>
+                                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-emerald-300 border-dashed rounded-md bg-white relative">
                                     <div className="space-y-1 text-center">
-                                        <Upload className="mx-auto h-12 w-12 text-blue-400" />
+                                        <Upload className="mx-auto h-12 w-12 text-emerald-400" />
                                         <div className="flex text-sm text-gray-600 justify-center">
-                                            <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
+                                            <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-medium text-emerald-600 hover:text-emerald-500">
                                                 <span>Upload a file</span>
                                                 <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} />
                                             </label>
@@ -381,7 +381,7 @@ const RegisterPage = () => {
                         )}
 
                         <div className="flex items-center">
-                            <input id="terms" name="terms" type="checkbox" required className="h-4 w-4 text-blue-600 border-gray-300 rounded" />
+                            <input id="terms" name="terms" type="checkbox" required className="h-4 w-4 text-emerald-600 border-gray-300 rounded" />
                             <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                                 I declare consent and agree to Terms and Privacy Policy.
                             </label>
@@ -393,7 +393,7 @@ const RegisterPage = () => {
                     <button
                         type="submit"
                         disabled={status === 'loading'}
-                        className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                     >
                         {status === 'loading' ? 'Creating Account...' : `Create ${roleTitle} Account`}
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -403,7 +403,7 @@ const RegisterPage = () => {
                 <div className="text-center">
                     <p className="text-sm text-gray-600">
                         Already have an account?{' '}
-                        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition">
+                        <Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-500 transition">
                             Sign in
                         </Link>
                     </p>

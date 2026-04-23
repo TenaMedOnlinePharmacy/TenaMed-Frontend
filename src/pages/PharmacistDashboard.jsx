@@ -40,13 +40,13 @@ const PharmacistDashboard = () => {
                     <div className="flex bg-gray-100 p-1 rounded-lg">
                         <button
                             onClick={() => setActiveTab('orders')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'orders' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'orders' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Orders
                         </button>
                         <button
                             onClick={() => setActiveTab('inventory')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'inventory' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'inventory' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Inventory
                         </button>
@@ -62,7 +62,7 @@ const PharmacistDashboard = () => {
                     </div>
                     <div className="bg-white rounded-xl border border-gray-100 p-4">
                         <p className="text-xs text-gray-500">Accepted Orders</p>
-                        <p className="text-2xl font-bold text-blue-600">{acceptedOrders}</p>
+                        <p className="text-2xl font-bold text-emerald-600">{acceptedOrders}</p>
                     </div>
                     <div className="bg-white rounded-xl border border-gray-100 p-4">
                         <p className="text-xs text-gray-500">Completed Orders</p>
@@ -79,7 +79,7 @@ const PharmacistDashboard = () => {
                 </div>
 
                 <div className="mb-6">
-                    <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition">
+                    <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition">
                         Open Prescription Review Queue
                     </Link>
                 </div>
@@ -88,7 +88,7 @@ const PharmacistDashboard = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <ClipboardList className="text-blue-600" /> Incoming Orders
+                                <ClipboardList className="text-emerald-600" /> Incoming Orders
                             </h2>
                         </div>
                         <div className="overflow-x-auto">
@@ -116,7 +116,7 @@ const PharmacistDashboard = () => {
                                             <td className="p-4 font-medium text-gray-900">${order.total.toFixed(2)}</td>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                        order.status === 'Accepted' ? 'bg-blue-100 text-blue-700' :
+                                                        order.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
                                                             order.status === 'Dispatched' ? 'bg-purple-100 text-purple-700' :
                                                                 'bg-green-100 text-green-700'
                                                     }`}>
@@ -136,7 +136,7 @@ const PharmacistDashboard = () => {
                                                         </>
                                                     )}
                                                     {order.status === 'Accepted' && (
-                                                        <button onClick={() => updateOrderStatus(order.id, 'Dispatched')} className="p-1 text-blue-600 hover:bg-blue-50 rounded flex items-center gap-1 text-sm font-medium">
+                                                        <button onClick={() => updateOrderStatus(order.id, 'Dispatched')} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded flex items-center gap-1 text-sm font-medium">
                                                             <Truck className="w-4 h-4" /> Dispatch
                                                         </button>
                                                     )}
@@ -152,9 +152,9 @@ const PharmacistDashboard = () => {
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                <Package className="text-blue-600" /> Inventory Management
+                                <Package className="text-emerald-600" /> Inventory Management
                             </h2>
-                            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+                            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
                                 <Plus className="w-4 h-4" /> Add Item
                             </button>
                         </div>
@@ -190,7 +190,7 @@ const PharmacistDashboard = () => {
                                             </td>
                                             <td className="p-4">
                                                 <div className="flex gap-2">
-                                                    <button className="text-gray-400 hover:text-blue-600 transition"><Edit className="w-4 h-4" /></button>
+                                                    <button className="text-gray-400 hover:text-emerald-600 transition"><Edit className="w-4 h-4" /></button>
                                                     <button onClick={() => handleDeleteItem(item.id)} className="text-gray-400 hover:text-red-600 transition"><Trash2 className="w-4 h-4" /></button>
                                                 </div>
                                             </td>

@@ -59,10 +59,10 @@ const HospitalDashboardPage = () => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <form onSubmit={addDoctor} className="bg-white rounded-xl border border-gray-100 p-5 space-y-3 h-max">
-                        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><UserPlus className="w-4 h-4 text-blue-600" /> Add Doctor</h2>
+                        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><UserPlus className="w-4 h-4 text-emerald-600" /> Add Doctor</h2>
                         <input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Doctor full name" className="w-full p-2.5 border border-gray-300 rounded-lg" />
                         <input value={draft.specialty} onChange={(e) => setDraft((d) => ({ ...d, specialty: e.target.value }))} placeholder="Specialty" className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                        <button className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-semibold hover:bg-blue-700">Add to Roster</button>
+                        <button className="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-700">Add to Roster</button>
                     </form>
 
                     <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -79,7 +79,7 @@ const HospitalDashboardPage = () => {
                             <tbody className="divide-y divide-gray-100">
                                 {doctors.map((doc) => (
                                     <tr key={doc.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-medium text-blue-600">{doc.id}</td>
+                                        <td className="p-4 font-medium text-emerald-600">{doc.id}</td>
                                         <td className="p-4 text-gray-800">{doc.name}</td>
                                         <td className="p-4 text-gray-600">{doc.specialty}</td>
                                         <td className="p-4">

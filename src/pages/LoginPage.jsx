@@ -70,8 +70,8 @@ const LoginPage = () => {
         <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
                 <div className="text-center">
-                    <div className="mx-auto h-12 w-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                        {role === 'admin' || role === 'doctor' ? <Shield className="h-6 w-6 text-blue-600" /> : <User className="h-6 w-6 text-blue-600" />}
+                    <div className="mx-auto h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4">
+                        {role === 'admin' || role === 'doctor' ? <Shield className="h-6 w-6 text-emerald-600" /> : <User className="h-6 w-6 text-emerald-600" />}
                     </div>
                     <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Welcome Back</h2>
                     <p className="mt-2 text-sm text-gray-600">Sign in to your {roleTitle} account</p>
@@ -84,7 +84,7 @@ const LoginPage = () => {
                             type="button"
                             disabled={builderModeEnabled}
                             onClick={() => setRole(entry)}
-                            className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'} ${builderModeEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'} ${builderModeEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
                         >
                             {entry}
                         </button>
@@ -110,7 +110,7 @@ const LoginPage = () => {
                                     name="email"
                                     type="email"
                                     required
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition sm:text-sm"
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition sm:text-sm"
                                     placeholder="name@example.com"
                                     value={formData.email}
                                     onChange={handleChange}
@@ -120,7 +120,7 @@ const LoginPage = () => {
                         <div>
                             <div className="flex items-center justify-between mb-1">
                                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-                                <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
+                                <Link to="/forgot-password" className="text-sm text-emerald-600 hover:text-emerald-500 font-medium">
                                     Forgot Password?
                                 </Link>
                             </div>
@@ -133,7 +133,7 @@ const LoginPage = () => {
                                     name="password"
                                     type="password"
                                     required
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition sm:text-sm"
+                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition sm:text-sm"
                                     placeholder="••••••••"
                                     value={formData.password}
                                     onChange={handleChange}
@@ -147,7 +147,7 @@ const LoginPage = () => {
                     <button
                         type="submit"
                         disabled={status === 'loading'}
-                        className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+                        className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                     >
                         {status === 'loading' ? 'Signing in...' : `Sign in as ${roleTitle}`}
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
@@ -157,7 +157,7 @@ const LoginPage = () => {
                 <div className="text-center">
                     <p className="text-sm text-gray-600">
                         Do not have an account?{' '}
-                        <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 transition">
+                        <Link to="/register" className="font-medium text-emerald-600 hover:text-emerald-500 transition">
                             Create an account
                         </Link>
                     </p>

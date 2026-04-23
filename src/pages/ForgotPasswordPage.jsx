@@ -27,7 +27,7 @@ const ForgotPasswordPage = () => {
                         <p className="text-gray-600 mb-6">
                             We have sent a password reset link to <span className="font-semibold text-gray-900">{email}</span>.
                         </p>
-                        <Link to="/login" className="text-blue-600 hover:text-blue-500 font-medium flex items-center justify-center gap-2">
+                        <Link to="/login" className="text-emerald-600 hover:text-emerald-500 font-medium flex items-center justify-center gap-2">
                             <ArrowLeft className="w-4 h-4" /> Back to Login
                         </Link>
                     </div>
@@ -52,7 +52,7 @@ const ForgotPasswordPage = () => {
                                         type="email"
                                         autoComplete="email"
                                         required
-                                        className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                        className="appearance-none rounded-lg relative block w-full pl-10 px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm"
                                         placeholder="Email address"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
@@ -64,14 +64,14 @@ const ForgotPasswordPage = () => {
                                 <button
                                     type="submit"
                                     disabled={status === 'loading'}
-                                    className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${status === 'loading' ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors`}
+                                    className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white ${status === 'loading' ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors`}
                                 >
                                     {status === 'loading' ? 'Sending...' : 'Send Reset Link'}
                                 </button>
                             </div>
 
                             <div className="flex items-center justify-center">
-                                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 flex items-center gap-2">
+                                <Link to="/login" className="font-medium text-emerald-600 hover:text-emerald-500 flex items-center gap-2">
                                     <ArrowLeft className="w-4 h-4" /> Back to Login
                                 </Link>
                             </div>

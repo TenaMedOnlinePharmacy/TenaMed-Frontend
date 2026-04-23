@@ -34,7 +34,7 @@ const HomePage = () => {
                         {/* Left */}
                         <div className="space-y-8">
                             <div className="inline-flex items-center gap-2 rounded-full border border-zinc-200/60 bg-white/80 px-4 py-2 shadow-sm">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-600 text-white">
                                     <Pill className="w-4 h-4" />
                                 </span>
                                 <span className="text-sm font-medium text-zinc-900">TenaMED • Modern Pharmacy & Health</span>
@@ -42,7 +42,7 @@ const HomePage = () => {
 
                             <h1 className="text-5xl lg:text-7xl font-semibold tracking-tight leading-[1.08] text-zinc-900">
                                 Modern Care for <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500">Your Daily Health.</span>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">Your Daily Health.</span>
                             </h1>
 
                             <p className="text-lg text-zinc-500 max-w-xl leading-relaxed">
@@ -53,7 +53,7 @@ const HomePage = () => {
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Link
                                     to="/products"
-                                    className="inline-flex justify-center items-center gap-2 bg-blue-600 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-sm hover:bg-blue-700 hover:-translate-y-0.5"
+                                    className="inline-flex justify-center items-center gap-2 bg-emerald-600 text-white text-sm font-medium px-6 py-3 rounded-full transition-all shadow-sm hover:bg-emerald-700 hover:-translate-y-0.5"
                                 >
                                     Shop Medicines
                                     <ArrowRight className="w-4 h-4" />
@@ -87,12 +87,12 @@ const HomePage = () => {
                                     />
                                 </div>
                                 <div>
-                                    <div className="flex gap-0.5 text-blue-500">
-                                        <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-                                        <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-                                        <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-                                        <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-                                        <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
+                                    <div className="flex gap-0.5 text-emerald-500">
+                                        <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+                                        <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+                                        <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+                                        <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
+                                        <Star className="w-4 h-4 fill-emerald-500 text-emerald-500" />
                                     </div>
                                     <p className="text-xs mt-0.5 text-zinc-500">
                                         Trusted by <span className="font-medium text-zinc-900">50k+ Customers</span>
@@ -112,10 +112,10 @@ const HomePage = () => {
 
                                 <div className="absolute top-6 left-6 flex flex-col gap-2">
                                     <span className="inline-flex items-center gap-1.5 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border border-white/20 bg-white/90 text-zinc-800">
-                                        <CheckCircle2 className="w-4 h-4 text-blue-600" /> Quality Verified
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Quality Verified
                                     </span>
                                     <span className="inline-flex items-center gap-1.5 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium shadow-sm border border-white/20 bg-white/90 text-zinc-800">
-                                        <Bolt className="w-4 h-4 text-blue-600" /> Same-Day Delivery
+                                        <Bolt className="w-4 h-4 text-emerald-600" /> Same-Day Delivery
                                     </span>
                                 </div>
 
@@ -124,7 +124,7 @@ const HomePage = () => {
                                         <p className="text-xs font-medium uppercase tracking-wider mb-0.5 text-zinc-500">Our Promise</p>
                                         <p className="text-sm font-medium tracking-tight text-zinc-900">Accurate, safe, and fast.</p>
                                     </div>
-                                    <div className="p-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center">
+                                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center">
                                         <BadgeCheck className="w-5 h-5" />
                                     </div>
                                 </div>
@@ -138,11 +138,11 @@ const HomePage = () => {
             <section className="py-14 lg:py-20 bg-zinc-950 border-y border-zinc-800">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="bg-blue-600 rounded-2xl p-8 shadow-sm md:-translate-y-6 text-white border border-blue-500 relative overflow-hidden">
+                        <div className="bg-emerald-600 rounded-2xl p-8 shadow-sm md:-translate-y-6 text-white border border-emerald-500 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-2xl rounded-full translate-x-10 -translate-y-10"></div>
                             <h3 className="text-3xl font-semibold tracking-tight mb-2">#1</h3>
                             <p className="text-lg font-medium mb-3">Community Pharmacy</p>
-                            <p className="text-sm leading-relaxed text-blue-100 font-light">
+                            <p className="text-sm leading-relaxed text-emerald-100 font-light">
                                 Reliable medications and expert advice, delivered with care.
                             </p>
                         </div>
@@ -173,7 +173,7 @@ const HomePage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center max-w-2xl mx-auto mb-14">
                         <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4 text-zinc-900">
-                            Comprehensive Pharmacy <span className="text-blue-600">Services</span>
+                            Comprehensive Pharmacy <span className="text-emerald-600">Services</span>
                         </h2>
                         <p className="text-base text-zinc-500">
                             More than a place to pick up pills — we help you manage your health end-to-end.
@@ -182,7 +182,7 @@ const HomePage = () => {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <FileText className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">Prescription Refills</h3>
@@ -192,7 +192,7 @@ const HomePage = () => {
                         </div>
 
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <Syringe className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">Immunizations</h3>
@@ -202,7 +202,7 @@ const HomePage = () => {
                         </div>
 
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <MessageCircle className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">Health Consultations</h3>
@@ -212,7 +212,7 @@ const HomePage = () => {
                         </div>
 
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <Pill className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">OTC & Supplements</h3>
@@ -222,7 +222,7 @@ const HomePage = () => {
                         </div>
 
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <Truck className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">Local Delivery</h3>
@@ -232,7 +232,7 @@ const HomePage = () => {
                         </div>
 
                         <div className="group bg-white p-6 rounded-2xl shadow-sm border border-zinc-200/80 hover:border-zinc-300 hover:shadow-md transition-all duration-300">
-                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-blue-600 mb-6 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
+                            <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-zinc-100 bg-zinc-50 text-emerald-600 mb-6 group-hover:bg-emerald-50 group-hover:border-emerald-100 transition-colors">
                                 <HeartPulse className="w-6 h-6" />
                             </div>
                             <h3 className="text-xl font-medium mb-2 tracking-tight text-zinc-900">Health Screenings</h3>
@@ -253,7 +253,7 @@ const HomePage = () => {
                                 Clinical Team
                             </span>
                             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-3 text-zinc-900">
-                                Meet Your <span className="text-blue-600">Pharmacists</span>
+                                Meet Your <span className="text-emerald-600">Pharmacists</span>
                             </h2>
                             <p className="text-base text-zinc-500 max-w-xl">
                                 Licensed professionals committed to safe, effective medication management.
@@ -262,7 +262,7 @@ const HomePage = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="group relative rounded-2xl overflow-hidden bg-zinc-50 border border-blue-200 shadow-sm">
+                        <div className="group relative rounded-2xl overflow-hidden bg-zinc-50 border border-emerald-200 shadow-sm">
                             <div className="aspect-[4/5] w-full relative">
                                 <img
                                     src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=600"
@@ -271,7 +271,7 @@ const HomePage = () => {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent"></div>
                                 <div className="absolute top-4 right-4 p-1.5 rounded-md bg-white/90 backdrop-blur border border-white/20 shadow-sm flex items-center justify-center">
-                                    <Star className="w-4 h-4 fill-blue-600 text-blue-600" />
+                                    <Star className="w-4 h-4 fill-emerald-600 text-emerald-600" />
                                 </div>
                                 <div className="absolute bottom-0 left-0 right-0 p-5 text-left text-white">
                                     <span className="inline-block px-2 py-0.5 rounded border border-white/20 backdrop-blur-md text-xs font-medium mb-1.5 bg-white/10">
@@ -333,7 +333,7 @@ const HomePage = () => {
                 <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                         <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-3 text-zinc-900">
-                            Frequently Asked <span className="text-blue-600">Questions</span>
+                            Frequently Asked <span className="text-emerald-600">Questions</span>
                         </h2>
                         <p className="text-base text-zinc-500">Everything you need to know about orders and prescriptions.</p>
                     </div>
@@ -397,7 +397,7 @@ const HomePage = () => {
                         <div className="hidden lg:flex flex-col gap-6">
                             <h2 className="text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
                                 Manage Your <br />
-                                <span className="text-blue-500">Prescriptions</span> Online.
+                                <span className="text-emerald-500">Prescriptions</span> Online.
                             </h2>
                             <p className="font-light text-base text-zinc-400 max-w-md">
                                 Request a refill, upload a prescription, or ask a pharmacist — in less than 2 minutes.
@@ -405,7 +405,7 @@ const HomePage = () => {
 
                             <div className="mt-8 space-y-4 max-w-sm">
                                 <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl">
-                                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-blue-500 shrink-0">
+                                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-emerald-500 shrink-0">
                                         <Clock className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -415,7 +415,7 @@ const HomePage = () => {
                                 </div>
 
                                 <div className="flex items-center gap-4 bg-zinc-900/50 border border-zinc-800 p-4 rounded-xl">
-                                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-blue-500 shrink-0">
+                                    <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-emerald-500 shrink-0">
                                         <ShieldCheck className="w-5 h-5" />
                                     </div>
                                     <div>
@@ -433,18 +433,18 @@ const HomePage = () => {
                                     <input
                                         type="text"
                                         placeholder="Full Name"
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors text-white"
                                     />
                                     <input
                                         type="tel"
                                         placeholder="Phone Number"
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors text-white"
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="relative">
-                                        <select className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 appearance-none cursor-pointer text-zinc-300">
+                                        <select className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 appearance-none cursor-pointer text-zinc-300">
                                             <option>Request Type</option>
                                             <option>Prescription Refill</option>
                                             <option>Upload Prescription</option>
@@ -456,19 +456,19 @@ const HomePage = () => {
                                     <input
                                         type="text"
                                         placeholder="Rx Number (Optional)"
-                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors text-white"
                                     />
                                 </div>
 
                                 <textarea
                                     rows={3}
                                     placeholder="Additional details or medications..."
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors text-white resize-none"
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-sm placeholder-zinc-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors text-white resize-none"
                                 />
 
                                 <button
                                     type="submit"
-                                    className="w-full bg-blue-600 font-medium text-sm py-3.5 rounded-xl transition-all shadow-sm hover:bg-blue-500 text-white flex items-center justify-center gap-2 mt-2"
+                                    className="w-full bg-emerald-600 font-medium text-sm py-3.5 rounded-xl transition-all shadow-sm hover:bg-emerald-500 text-white flex items-center justify-center gap-2 mt-2"
                                 >
                                     Submit Request
                                     <CalendarClock className="w-4 h-4" />
@@ -484,21 +484,21 @@ const HomePage = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div className="flex items-start gap-3 p-5 rounded-2xl border border-zinc-200/80 bg-zinc-50">
-                            <MapPin className="w-5 h-5 text-blue-600 mt-0.5" />
+                            <MapPin className="w-5 h-5 text-emerald-600 mt-0.5" />
                             <div>
                                 <p className="text-sm font-medium text-zinc-900">Location</p>
                                 <p className="text-sm text-zinc-500">Addis Ababa, Ethiopia</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3 p-5 rounded-2xl border border-zinc-200/80 bg-zinc-50">
-                            <Phone className="w-5 h-5 text-blue-600 mt-0.5" />
+                            <Phone className="w-5 h-5 text-emerald-600 mt-0.5" />
                             <div>
                                 <p className="text-sm font-medium text-zinc-900">Phone</p>
                                 <p className="text-sm text-zinc-500">+251 911 000 000</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-3 p-5 rounded-2xl border border-zinc-200/80 bg-zinc-50">
-                            <Mail className="w-5 h-5 text-blue-600 mt-0.5" />
+                            <Mail className="w-5 h-5 text-emerald-600 mt-0.5" />
                             <div>
                                 <p className="text-sm font-medium text-zinc-900">Email</p>
                                 <p className="text-sm text-zinc-500">support@tenamed.com</p>

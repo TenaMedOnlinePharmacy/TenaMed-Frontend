@@ -130,7 +130,7 @@ const ProductsPage = () => {
                             <input
                                 type="text"
                                 placeholder="Search medicine or pharmacy..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -143,7 +143,7 @@ const ProductsPage = () => {
                     <div className="w-full md:w-64 flex-shrink-0">
                         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
                             <div className="flex items-center gap-2 mb-4">
-                                <Filter className="w-5 h-5 text-blue-600" />
+                                <Filter className="w-5 h-5 text-emerald-600" />
                                 <h3 className="font-semibold text-gray-800">Categories</h3>
                             </div>
                             <div className="space-y-2">
@@ -152,7 +152,7 @@ const ProductsPage = () => {
                                         key={category}
                                         onClick={() => setSelectedCategory(category)}
                                         className={`nav-btn w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory === category
-                                            ? 'bg-blue-50 text-blue-700 font-medium'
+                                            ? 'bg-emerald-50 text-emerald-700 font-medium'
                                             : 'text-gray-600 hover:bg-gray-50'
                                             }`}
                                     >
@@ -195,7 +195,7 @@ const ProductsPage = () => {
                                         </Link>
                                         <div className="p-5">
                                             <div className="mb-1 flex items-center gap-2">
-                                                <div className="text-xs font-medium text-blue-600">{product.category}</div>
+                                                <div className="text-xs font-medium text-emerald-600">{product.category}</div>
                                                 {product.prescriptionRequired && (
                                                     <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
                                                         Prescription Required
@@ -203,7 +203,7 @@ const ProductsPage = () => {
                                                 )}
                                             </div>
                                             <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block">
-                                                <h3 className="font-bold text-gray-900 mb-1 hover:text-blue-600 transition">{product.name}</h3>
+                                                <h3 className="font-bold text-gray-900 mb-1 hover:text-emerald-600 transition">{product.name}</h3>
                                             </Link>
                                             <p className="text-sm text-gray-500 mb-3">Sold by: {product.pharmacy}</p>
 
@@ -226,7 +226,7 @@ const ProductsPage = () => {
                                                         onClick={() => addToCart(product, 1)}
                                                         disabled={!product.inStock}
                                                         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${product.inStock
-                                                            ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800'
                                                             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                                             }`}
                                                     >
@@ -248,7 +248,7 @@ const ProductsPage = () => {
                                 <p className="text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
                                 <button
                                     onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
-                                    className="mt-4 text-blue-600 hover:text-blue-500 font-medium"
+                                    className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
                                 >
                                     Clear all filters
                                 </button>
