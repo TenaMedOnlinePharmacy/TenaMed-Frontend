@@ -196,17 +196,27 @@ const ProductsPage = () => {
                                                 ) : (
                                                     <span className="text-sm font-semibold text-gray-500">Price unavailable</span>
                                                 )}
-                                                <button
-                                                    onClick={() => addToCart(product, 1)}
-                                                    disabled={!product.inStock}
-                                                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${product.inStock
-                                                        ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
-                                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                        }`}
-                                                >
-                                                    <ShoppingCart className="w-4 h-4" />
-                                                    Add
-                                                </button>
+                                                {product.prescriptionRequired ? (
+                                                    <Link
+                                                        to="/upload-prescription"
+                                                        state={{ medicine: product, source: 'products-list' }}
+                                                        className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors"
+                                                    >
+                                                        Upload prescription
+                                                    </Link>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => addToCart(product, 1)}
+                                                        disabled={!product.inStock}
+                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${product.inStock
+                                                            ? 'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800'
+                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                            }`}
+                                                    >
+                                                        <ShoppingCart className="w-4 h-4" />
+                                                        Add
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
