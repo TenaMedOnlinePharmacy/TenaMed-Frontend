@@ -7,7 +7,8 @@ import { useCart } from '../context/CartContext';
 const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
 
 const mapMedicineToProduct = (medicine, index) => {
-    const price = Number(medicine?.price ?? medicine?.doseValue ?? 0);
+    const parsedPrice = Number(medicine?.price);
+    const hasValidPrice = Number.isFinite(parsedPrice) && parsedPrice >= 0;
     const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
     const pharmacyName = medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy';
     const category = medicine?.medicineCategory || medicine?.category || 'General';
@@ -26,8 +27,12 @@ const mapMedicineToProduct = (medicine, index) => {
         category,
         pharmacy: pharmacyName,
         description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
-        price: Number.isFinite(price) && price > 0 ? price : 0,
-        image: FALLBACK_MEDICINE_IMAGE,
+        indications: medicine?.indications || '',
+        contraindications: medicine?.contraindications || '',
+        sideEffects: medicine?.sideEffects || '',
+        prescriptionRequired: Boolean(medicine?.prescriptionRequired),
+        price: hasValidPrice ? parsedPrice : null,
+        image: medicine?.imageUrl || FALLBACK_MEDICINE_IMAGE,
         inStock,
     };
 };
@@ -172,14 +177,25 @@ const ProductsPage = () => {
                                             )}
                                         </Link>
                                         <div className="p-5">
-                                            <div className="text-xs font-medium text-blue-600 mb-1">{product.category}</div>
+                                            <div className="mb-1 flex items-center gap-2">
+                                                <div className="text-xs font-medium text-blue-600">{product.category}</div>
+                                                {product.prescriptionRequired && (
+                                                    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                                                        Prescription Required
+                                                    </span>
+                                                )}
+                                            </div>
                                             <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block">
                                                 <h3 className="font-bold text-gray-900 mb-1 hover:text-blue-600 transition">{product.name}</h3>
                                             </Link>
                                             <p className="text-sm text-gray-500 mb-3">Sold by: {product.pharmacy}</p>
 
                                             <div className="flex items-center justify-between mt-4">
-                                                <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                                                {typeof product.price === 'number' ? (
+                                                    <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                                                ) : (
+                                                    <span className="text-sm font-semibold text-gray-500">Price unavailable</span>
+                                                )}
                                                 <button
                                                     onClick={() => addToCart(product, 1)}
                                                     disabled={!product.inStock}

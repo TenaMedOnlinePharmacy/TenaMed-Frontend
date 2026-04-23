@@ -12,6 +12,8 @@ const mapMedicineToProduct = (medicine) => {
 
     return {
         id: medicine?.id || medicine?.medicineId || medicine?.medicineName || 'medicine',
+        medicineId: medicine?.medicineId || medicine?.id || null,
+        pharmacyId: medicine?.pharmacyId || null,
         name: medicine?.medicineName || medicine?.name || 'Unnamed medicine',
         category: medicine?.medicineCategory || medicine?.category || 'General',
         pharmacy: medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy',
@@ -19,8 +21,9 @@ const mapMedicineToProduct = (medicine) => {
         indications: medicine?.indications || '',
         contraindications: medicine?.contraindications || '',
         sideEffects: medicine?.sideEffects || '',
+        prescriptionRequired: Boolean(medicine?.prescriptionRequired),
         price: Number.isFinite(price) && price > 0 ? price : 0,
-        image: FALLBACK_MEDICINE_IMAGE,
+        image: medicine?.imageUrl || FALLBACK_MEDICINE_IMAGE,
         inStock: true,
     };
 };
@@ -92,6 +95,16 @@ const ProductDetailsPage = () => {
     }, [id, location.state]);
 
     const handleAddToCart = () => {
+        if (product?.prescriptionRequired) {
+            navigate('/upload-prescription', {
+                state: {
+                    medicine: product,
+                    source: 'product-details',
+                },
+            });
+            return;
+        }
+
         addToCart(product, quantity);
         navigate('/cart');
     };
@@ -148,7 +161,14 @@ const ProductDetailsPage = () => {
                         <div className="md:w-1/2 p-6 md:p-10 flex flex-col">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{product.category}</span>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">{product.category}</span>
+                                        {product.prescriptionRequired && (
+                                            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                                                Prescription Required
+                                            </span>
+                                        )}
+                                    </div>
                                     <h1 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{product.name}</h1>
                                     <p className="text-sm text-gray-500">
                                         Sold by <span className="font-semibold text-blue-600">{product.pharmacy}</span>
@@ -192,7 +212,7 @@ const ProductDetailsPage = () => {
                                         disabled={!product.inStock}
                                     >
                                         <ShoppingCart className="w-5 h-5" />
-                                        Add to Cart
+                                        {product.prescriptionRequired ? 'Upload Prescription' : 'Add to Cart'}
                                     </button>
                                 </div>
                             </div>
@@ -203,6 +223,13 @@ const ProductDetailsPage = () => {
                                 <p className="text-gray-600 leading-relaxed mb-6">
                                     {product.description}
                                 </p>
+
+                                {product.indications && (
+                                    <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800">
+                                        <span className="font-semibold">Indications: </span>
+                                        {product.indications}
+                                    </div>
+                                )}
 
                                 {(product.contraindications || product.sideEffects) && (
                                     <div className="mb-6 space-y-3 text-sm">
