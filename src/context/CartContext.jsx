@@ -2,10 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
     cartAddItem,
-    cartClear,
-    cartGet,
-    cartRemoveItem,
-    cartUpdateItemQuantity,
+//
 } from '../api/axios';
 
 const CartContext = createContext();
