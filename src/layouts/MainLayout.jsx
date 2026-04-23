@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 const MainLayout = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
-    const { getCartCount } = useCart();
+    const { getCartCount, refreshCart } = useCart();
     const { isAuthenticated, userRole, userEmail, logout } = useAuth();
     const shouldShowFooter = !['/login', '/register'].includes(location.pathname);
 
@@ -79,7 +79,7 @@ const MainLayout = () => {
                         </div>
 
                         {roleKey === 'customer' && (
-                            <Link to="/cart" className="relative p-2 hover:bg-gray-100 rounded-full transition group">
+                            <Link to="/cart" onClick={refreshCart} className="relative p-2 hover:bg-gray-100 rounded-full transition group">
                                 <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-blue-600" />
                                 {getCartCount() > 0 && (
                                     <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -147,7 +147,10 @@ const MainLayout = () => {
                             <Link
                                 to="/cart"
                                 className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition"
-                                onClick={() => setMobileMenuOpen(false)}
+                                onClick={() => {
+                                    refreshCart();
+                                    setMobileMenuOpen(false);
+                                }}
                             >
                                 <span className="font-medium">Cart</span>
                                 <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-red-500 text-white text-xs font-bold">

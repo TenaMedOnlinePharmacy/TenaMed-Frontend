@@ -206,7 +206,7 @@ export const patientDeleteAllergy = (id) => api.delete(`/patient/allergies/${id}
 
 // Cart (explicit /api path strategy)
 export const cartAddItem = (payload) => apiRoot.post('/api/cart/items', payload, buildHardcodedAuthHeaders());
-///export const cartGet = () => apiRoot.get('/api/cart', buildHardcodedAuthHeaders());
+export const cartGet = () => apiRoot.get('/api/cart', buildHardcodedAuthHeaders());
 export const cartUpdateItemQuantity = (itemId, payload) => apiRoot.put(`/api/cart/items/${itemId}`, payload, buildHardcodedAuthHeaders());
 export const cartRemoveItem = (itemId) => apiRoot.delete(`/api/cart/items/${itemId}`, buildHardcodedAuthHeaders());
 export const cartClear = () => apiRoot.delete('/api/cart/clear', buildHardcodedAuthHeaders());

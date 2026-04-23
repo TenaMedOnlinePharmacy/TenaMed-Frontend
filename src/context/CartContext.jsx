@@ -2,7 +2,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
     cartAddItem,
-//
+    cartClear,
+    cartGet,
+    cartRemoveItem,
+    cartUpdateItemQuantity,
 } from '../api/axios';
 
 const CartContext = createContext();
@@ -63,10 +66,11 @@ const toMetadata = (product) => {
 };
 
 const buildCartAddPayload = (product, quantity) => ({
+    medicineId: product?.medicineId || product?.id,
+    pharmacyId: product?.pharmacyId,
     medicineName: product?.name || product?.medicineName || '',
     pharmacyName: product?.pharmacy || product?.pharmacyName || '',
     quantity: Number(quantity) > 0 ? Number(quantity) : 1,
-    prescriptionId: product?.prescriptionId ?? '',
 });
 
 export const useCart = () => {
@@ -108,21 +112,6 @@ export const CartProvider = ({ children }) => {
         if (metadata) {
             setCartMetadata((prev) => ({ ...prev, [metadata.medicineId]: metadata }));
         }
-
-        const medicineId = product?.medicineId || product?.id;
-
-        setCartItems(prevItems => {
-            const existingItem = prevItems.find(item => item.id === product.id || item.medicineId === medicineId);
-            if (existingItem) {
-                return prevItems.map(item =>
-                    item.id === product.id || item.medicineId === medicineId
-                        ? { ...item, quantity: item.quantity + quantity }
-                        : item
-                );
-            } else {
-                return [...prevItems, { ...product, medicineId, quantity }];
-            }
-        });
 
         cartAddItem(buildCartAddPayload(product, quantity))
             .then((response) => {
@@ -198,6 +187,7 @@ export const CartProvider = ({ children }) => {
     return (
         <CartContext.Provider value={{
             cartItems,
+            refreshCart: syncCartFromServer,
             addToCart,
             removeFromCart,
             updateQuantity,

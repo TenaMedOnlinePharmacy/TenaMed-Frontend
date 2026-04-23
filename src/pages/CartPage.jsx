@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const CartPage = () => {
-    const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+    const { cartItems, refreshCart, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+
+    useEffect(() => {
+        refreshCart();
+    }, [refreshCart]);
+
     const subtotal = getCartTotal();
     const shipping = subtotal > 50 ? 0 : 5.00;
     const total = subtotal + shipping;
