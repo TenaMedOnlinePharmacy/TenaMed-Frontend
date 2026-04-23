@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-const HARDCODED_AUTH_TOKEN = 'eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiI4MzI4MDhhNi00OTQ5LTRlYzUtYWFmYS01OGYzM2JlN2I1MmUiLCJqdGkiOiIzZTNkOWUyOS1hYWU2LTQ0NzgtOTkyNy04OGQzNDZjNmE5MjUiLCJzaWQiOiJjMTZkYjFkZi05MjY5LTQ5OTYtOTZhYi1mNDE5MzZiMmFmNTkiLCJ0eXBlIjoiQUNDRVNTIiwiaWF0IjoxNzc1NzI1NTQ5LCJleHAiOjI2NzU3MjU1NDl9.DkT0f_qq7_5P1NN6ZGtesyVRDJAUEzp-6RvVOwGNukcaAY1_Tlhzme8eJaB4hH1D';
-
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://nonobediently-nonperishing-hilda.ngrok-free.dev/api';
 const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
 
@@ -33,10 +31,12 @@ const apiFormDataRoot = axios.create({
     withCredentials: true,
 });
 
+const getStoredAccessToken = () => localStorage.getItem('tenamed_access_token') || '';
+
 const attachAuthHeader = (config) => {
     config.headers = config.headers || {};
     const hasAuthorizationHeader = Boolean(config.headers?.Authorization || config.headers?.authorization);
-    const token = localStorage.getItem('tenamed_access_token') || HARDCODED_AUTH_TOKEN;
+    const token = getStoredAccessToken();
     if (!hasAuthorizationHeader && token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,17 +51,17 @@ apiFormData.interceptors.request.use(attachAuthHeader, (error) => Promise.reject
 apiRoot.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
 apiFormDataRoot.interceptors.request.use(attachAuthHeader, (error) => Promise.reject(error));
 
-const buildHardcodedAuthHeaders = () => ({
+const buildAuthHeaders = () => ({
     headers: {
-        Authorization: `Bearer ${HARDCODED_AUTH_TOKEN}`,
         'ngrok-skip-browser-warning': 'true',
+        ...(getStoredAccessToken() ? { Authorization: `Bearer ${getStoredAccessToken()}` } : {}),
     },
 });
 
-const withHardcodedAuthHeaders = (config = {}) => ({
+const withAuthHeaders = (config = {}) => ({
     ...config,
     headers: {
-        ...buildHardcodedAuthHeaders().headers,
+        ...buildAuthHeaders().headers,
         ...(config.headers || {}),
     },
 });
@@ -81,142 +81,143 @@ const sanitizeParams = (params = {}) => {
 };
 
 // Auth
-export const authRegister = (payload) => api.post('/auth/register', payload, buildHardcodedAuthHeaders());
-export const authRegisterHospitalOwner = (payload) => apiFormData.post('/auth/register-hospital-owner', payload, buildHardcodedAuthHeaders());
-export const authRegisterPharmacy = (payload) => apiFormData.post('/auth/register-pharmacist', payload, buildHardcodedAuthHeaders());
-export const authRegisterAthlete = (payload) => api.post('/auth/register-athlete', payload, buildHardcodedAuthHeaders());
-export const authLogin = (payload) => api.post('/auth/login', payload, buildHardcodedAuthHeaders());
-export const authRefresh = () => api.post('/auth/refresh', null, buildHardcodedAuthHeaders());
-export const authLogout = () => api.post('/auth/logout', null, buildHardcodedAuthHeaders());
-export const authLogoutAll = () => api.post('/auth/logout-all', null, buildHardcodedAuthHeaders());
+export const authRegister = (payload) => api.post('/auth/register', payload, buildAuthHeaders());
+export const authRegisterHospitalOwner = (payload) => apiFormData.post('/auth/register-hospital-owner', payload, buildAuthHeaders());
+export const authRegisterPharmacy = (payload) => apiFormData.post('/auth/register-pharmacist', payload, buildAuthHeaders());
+export const authRegisterAthlete = (payload) => api.post('/auth/register-athlete', payload, buildAuthHeaders());
+export const authLogin = (payload) => api.post('/auth/login', payload, buildAuthHeaders());
+export const authRefresh = () => api.post('/auth/refresh', null, buildAuthHeaders());
+export const authLogout = () => api.post('/auth/logout', null, buildAuthHeaders());
+export const authLogoutAll = () => api.post('/auth/logout-all', null, buildAuthHeaders());
 
 // Identity
-export const identityRegister = (payload) => api.post('/identity/register', payload, buildHardcodedAuthHeaders());
-export const identityLogin = (payload) => api.post('/identity/login', payload, buildHardcodedAuthHeaders());
+export const identityRegister = (payload) => api.post('/identity/register', payload, buildAuthHeaders());
+export const identityLogin = (payload) => api.post('/identity/login', payload, buildAuthHeaders());
 
 // Admin users
-export const adminGetUser = (id) => api.get(`/admin/users/${id}`, buildHardcodedAuthHeaders());
-export const adminGetUserRoles = (id) => api.get(`/admin/users/${id}/roles`, buildHardcodedAuthHeaders());
-export const adminAddRoles = (id, payload) => api.post(`/admin/users/${id}/roles`, payload, buildHardcodedAuthHeaders());
-export const adminRemoveRole = (id, roleName) => api.delete(`/admin/users/${id}/roles/${roleName}`, buildHardcodedAuthHeaders());
-export const adminPopulateRoles = () => api.post('/admin/users/roles/populate', null, buildHardcodedAuthHeaders());
+export const adminGetUser = (id) => api.get(`/admin/users/${id}`, buildAuthHeaders());
+export const adminGetUserRoles = (id) => api.get(`/admin/users/${id}/roles`, buildAuthHeaders());
+export const adminAddRoles = (id, payload) => api.post(`/admin/users/${id}/roles`, payload, buildAuthHeaders());
+export const adminRemoveRole = (id, roleName) => api.delete(`/admin/users/${id}/roles/${roleName}`, buildAuthHeaders());
+export const adminPopulateRoles = () => api.post('/admin/users/roles/populate', null, buildAuthHeaders());
 
 // Payments
-export const paymentTest = () => api.get('/payments/test', buildHardcodedAuthHeaders());
+export const paymentTest = () => api.get('/payments/test', buildAuthHeaders());
 export const paymentInitialize = (orderId = '6169471a-bb60-4887-b5c3-66fffeaa5d2e') => api.post(
     '/payments/initialize',
     {
         orderId,
     },
-    buildHardcodedAuthHeaders(),
+    buildAuthHeaders(),
 );
-export const paymentCancel = (txRef) => api.put(`/payments/cancel/${txRef}`, null, buildHardcodedAuthHeaders());
-export const paymentWebhookGet = (txRef) => api.get('/payments/webhook', withHardcodedAuthHeaders({ params: { tx_ref: txRef } }));
-export const paymentWebhookPost = (payload) => api.post('/payments/webhook', payload, buildHardcodedAuthHeaders());
+export const paymentCancel = (txRef) => api.put(`/payments/cancel/${txRef}`, null, buildAuthHeaders());
+export const paymentWebhookGet = (txRef) => api.get('/payments/webhook', withAuthHeaders({ params: { tx_ref: txRef } }));
+export const paymentWebhookPost = (payload) => api.post('/payments/webhook', payload, buildAuthHeaders());
 
 
 // Medicines
-export const medicineCreate = (payload) => api.post('/medicines', payload, buildHardcodedAuthHeaders());
-export const medicineGetAll = () => api.get('/medicines', buildHardcodedAuthHeaders());
-export const medicineGetById = (id) => api.get(`/medicines/${id}`, buildHardcodedAuthHeaders());
-export const medicineSearch = (params = {}) => api.get('/medicines/search', withHardcodedAuthHeaders({ params: sanitizeParams(params) }));
-export const medicineUpdate = (id, payload) => api.put(`/medicines/${id}`, payload, buildHardcodedAuthHeaders());
-export const medicineDelete = (id) => api.delete(`/medicines/${id}`, buildHardcodedAuthHeaders());
-export const medicineAddAllergen = (medicineId, allergenId) => api.post(`/medicines/${medicineId}/allergens/${allergenId}`, null, buildHardcodedAuthHeaders());
-export const medicineRemoveAllergen = (medicineId, allergenId) => api.delete(`/medicines/${medicineId}/allergens/${allergenId}`, buildHardcodedAuthHeaders());
-export const medicineAddDopingRule = (medicineId, payload) => api.post(`/medicines/${medicineId}/doping-rules`, payload, buildHardcodedAuthHeaders());
-export const medicineRemoveDopingRule = (medicineId, ruleId) => api.delete(`/medicines/${medicineId}/doping-rules/${ruleId}`, buildHardcodedAuthHeaders());
+export const medicineCreate = (payload) => api.post('/medicines', payload, buildAuthHeaders());
+export const medicineGetAll = () => api.get('/medicines', buildAuthHeaders());
+export const medicineGetById = (id) => api.get(`/medicines/${id}`, buildAuthHeaders());
+export const medicineSearch = (params = {}) => api.get('/medicines/search', withAuthHeaders({ params: sanitizeParams(params) }));
+export const medicineUpdate = (id, payload) => api.put(`/medicines/${id}`, payload, buildAuthHeaders());
+export const medicineDelete = (id) => api.delete(`/medicines/${id}`, buildAuthHeaders());
+export const medicineAddAllergen = (medicineId, allergenId) => api.post(`/medicines/${medicineId}/allergens/${allergenId}`, null, buildAuthHeaders());
+export const medicineRemoveAllergen = (medicineId, allergenId) => api.delete(`/medicines/${medicineId}/allergens/${allergenId}`, buildAuthHeaders());
+export const medicineAddDopingRule = (medicineId, payload) => api.post(`/medicines/${medicineId}/doping-rules`, payload, buildAuthHeaders());
+export const medicineRemoveDopingRule = (medicineId, ruleId) => api.delete(`/medicines/${medicineId}/doping-rules/${ruleId}`, buildAuthHeaders());
 
 // Inventory
-export const inventoryCreate = (payload) => api.post('/inventory', payload, buildHardcodedAuthHeaders());
-export const inventoryAddBatch = (payload) => api.post('/inventory/batch', payload, buildHardcodedAuthHeaders());
-export const inventoryGet = (params) => api.get('/inventory', withHardcodedAuthHeaders({ params }));
-export const inventoryCheckAvailability = (params) => api.get('/inventory/check', withHardcodedAuthHeaders({ params }));
-export const inventoryReserve = (payload) => api.post('/inventory/reserve', payload, buildHardcodedAuthHeaders());
-export const inventoryConfirm = (payload) => api.post('/inventory/confirm', payload, buildHardcodedAuthHeaders());
-export const inventoryRelease = (payload) => api.post('/inventory/release', payload, buildHardcodedAuthHeaders());
+export const inventoryCreate = (payload) => api.post('/inventory', payload, buildAuthHeaders());
+export const inventoryAddBatch = (payload) => api.post('/inventory/batch', payload, buildAuthHeaders());
+export const inventoryGet = (params) => api.get('/inventory', withAuthHeaders({ params }));
+export const inventoryCheckAvailability = (params) => api.get('/inventory/check', withAuthHeaders({ params }));
+export const inventoryReserve = (payload) => api.post('/inventory/reserve', payload, buildAuthHeaders());
+export const inventoryConfirm = (payload) => api.post('/inventory/confirm', payload, buildAuthHeaders());
+export const inventoryRelease = (payload) => api.post('/inventory/release', payload, buildAuthHeaders());
 
 // Verification
-export const verificationProcess = (id) => api.post(`/v1/verification/${id}/process`, null, buildHardcodedAuthHeaders());
-export const verificationApprove = (id) => api.post(`/v1/verification/${id}/approve`, null, buildHardcodedAuthHeaders());
-export const verificationReject = (id, reason) => api.post(`/v1/verification/${id}/reject`, null, withHardcodedAuthHeaders({ params: { reason } }));
+export const verificationProcess = (id) => api.post(`/v1/verification/${id}/process`, null, buildAuthHeaders());
+export const verificationApprove = (id) => api.post(`/v1/verification/${id}/approve`, null, buildAuthHeaders());
+export const verificationReject = (id, reason) => api.post(`/v1/verification/${id}/reject`, null, withAuthHeaders({ params: { reason } }));
 
 // OCR
-export const ocrTest = () => api.get('/ocr/upload', buildHardcodedAuthHeaders());
+export const ocrTest = () => api.get('/ocr/upload', buildAuthHeaders());
 export const ocrUploadPrescription = (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    return apiFormData.post('/ocr/upload', formData, buildHardcodedAuthHeaders());
+    return apiFormData.post('/ocr/upload', formData, buildAuthHeaders());
 };
-export const ocrGetPipelineStatus = (prescriptionId) => api.get(`/ocr/pipeline/${prescriptionId}/status`, buildHardcodedAuthHeaders());
+export const ocrGetPipelineStatus = (prescriptionId) => api.get(`/ocr/pipeline/${prescriptionId}/status`, buildAuthHeaders());
 
 // Invitations
-export const invitationGetByToken = (token) => api.get(`/invitations/${token}`, buildHardcodedAuthHeaders());
+export const invitationGetByToken = (token) => api.get(`/invitations/${token}`, buildAuthHeaders());
 
 // Anti-doping
-export const antiDopingCheck = (payload) => api.post('/anti-doping/check', payload, buildHardcodedAuthHeaders());
+export const antiDopingCheck = (payload) => api.post('/anti-doping/check', payload, buildAuthHeaders());
 
 // Hospitals
-export const hospitalCreate = (payload) => api.post('/hospitals/', payload, buildHardcodedAuthHeaders());
-export const hospitalGetById = (id) => api.get(`/hospitals/${id}`, buildHardcodedAuthHeaders());
-export const hospitalUpdate = (id, payload) => api.put(`/hospitals/${id}`, payload, buildHardcodedAuthHeaders());
-export const hospitalVerify = (id) => api.patch(`/hospitals/${id}/verify`, null, buildHardcodedAuthHeaders());
-export const hospitalGetDoctors = (id) => api.get(`/hospitals/${id}/doctors`, buildHardcodedAuthHeaders());
-export const hospitalInviteDoctor = (id, payload) => api.post(`/hospitals/${id}/invite-doctor`, payload, buildHardcodedAuthHeaders());
+export const hospitalCreate = (payload) => api.post('/hospitals/', payload, buildAuthHeaders());
+export const hospitalGetById = (id) => api.get(`/hospitals/${id}`, buildAuthHeaders());
+export const hospitalUpdate = (id, payload) => api.put(`/hospitals/${id}`, payload, buildAuthHeaders());
+export const hospitalVerify = (id) => api.patch(`/hospitals/${id}/verify`, null, buildAuthHeaders());
+export const hospitalGetDoctors = (id) => api.get(`/hospitals/${id}/doctors`, buildAuthHeaders());
+export const hospitalInviteDoctor = (id, payload) => api.post(`/hospitals/${id}/invite-doctor`, payload, buildAuthHeaders());
 
 // Doctors
-export const doctorCreateFromInvite = (token, payload) => api.post('/doctors/create', payload, withHardcodedAuthHeaders({ params: { token } }));
-export const doctorGetMe = () => api.get('/doctors/me', buildHardcodedAuthHeaders());
-export const doctorGetById = (id) => api.get(`/doctors/${id}`, buildHardcodedAuthHeaders());
-export const doctorVerify = (id) => api.patch(`/doctors/${id}/verify`, null, buildHardcodedAuthHeaders());
+export const doctorCreateFromInvite = (token, payload) => api.post('/doctors/create', payload, withAuthHeaders({ params: { token } }));
+export const doctorGetMe = () => api.get('/doctors/me', buildAuthHeaders());
+export const doctorGetById = (id) => api.get(`/doctors/${id}`, buildAuthHeaders());
+export const doctorVerify = (id) => api.patch(`/doctors/${id}/verify`, null, buildAuthHeaders());
 
 // Pharmacies and Staff
-export const pharmacyCreate = (payload) => api.post('/pharmacies', payload, buildHardcodedAuthHeaders());
-export const pharmacyGetById = (id) => api.get(`/pharmacies/${id}`, buildHardcodedAuthHeaders());
-export const pharmacyVerify = (id) => api.post(`/pharmacies/${id}/verify`, null, buildHardcodedAuthHeaders());
-export const pharmacyInvitePharmacist = (id, payload) => api.post(`/pharmacies/${id}/invite-pharmacist`, payload, buildHardcodedAuthHeaders());
-export const pharmacyAddStaff = (id, payload) => api.post(`/pharmacies/${id}/staff`, payload, buildHardcodedAuthHeaders());
-export const pharmacyListStaff = (id) => api.get(`/pharmacies/${id}/staff`, buildHardcodedAuthHeaders());
-export const pharmacyVerifyStaff = (id, userId) => api.post(`/pharmacies/${id}/staff/${userId}/verify`, null, buildHardcodedAuthHeaders());
-export const pharmacistCreateFromInvite = (token, payload) => api.post('/pharmacists/create', payload, withHardcodedAuthHeaders({ params: { token } }));
+export const pharmacyCreate = (payload) => api.post('/pharmacies', payload, buildAuthHeaders());
+export const pharmacyGetById = (id) => api.get(`/pharmacies/${id}`, buildAuthHeaders());
+export const pharmacyVerify = (id) => api.post(`/pharmacies/${id}/verify`, null, buildAuthHeaders());
+export const pharmacyInvitePharmacist = (id, payload) => api.post(`/pharmacies/${id}/invite-pharmacist`, payload, buildAuthHeaders());
+export const pharmacyAddStaff = (id, payload) => api.post(`/pharmacies/${id}/staff`, payload, buildAuthHeaders());
+export const pharmacyListStaff = (id) => api.get(`/pharmacies/${id}/staff`, buildAuthHeaders());
+export const pharmacyVerifyStaff = (id, userId) => api.post(`/pharmacies/${id}/staff/${userId}/verify`, null, buildAuthHeaders());
+export const pharmacistCreateFromInvite = (token, payload) => api.post('/pharmacists/create', payload, withAuthHeaders({ params: { token } }));
 
 // Orders
-export const orderCreate = (payload) => api.post('/orders', payload, buildHardcodedAuthHeaders());
-export const orderAccept = (id) => api.post(`/orders/${id}/accept`, null, buildHardcodedAuthHeaders());
-export const orderReject = (id, payload) => api.post(`/orders/${id}/reject`, payload, buildHardcodedAuthHeaders());
-export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}/payment-status`, payload, buildHardcodedAuthHeaders());
+export const orderCreate = (payload) => api.post('/orders', payload, buildAuthHeaders());
+export const orderAccept = (id) => api.post(`/orders/${id}/accept`, null, buildAuthHeaders());
+export const orderReject = (id, payload) => api.post(`/orders/${id}/reject`, payload, buildAuthHeaders());
+export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}/payment-status`, payload, buildAuthHeaders());
 
 // Prescription inventory matching
-export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pharmacy/prescriptions/${prescriptionId}/inventory-matches`, buildHardcodedAuthHeaders());
+export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pharmacy/prescriptions/${prescriptionId}/inventory-matches`, buildAuthHeaders());
 
 // Patient profile
-export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildHardcodedAuthHeaders());
-export const patientGetProfile = () => api.get('/patient/profile', buildHardcodedAuthHeaders());
-export const patientUpdateProfile = (payload) => api.put('/patient/profile', payload, buildHardcodedAuthHeaders());
-export const patientConvertTemporary = (patientId) => api.post(`/patient/convert/${patientId}`, null, buildHardcodedAuthHeaders());
-export const patientCreateTemporary = (payload) => api.post('/patient/temporary', payload, buildHardcodedAuthHeaders());
-export const patientDeleteTemporary = (patientId) => api.delete(`/patient/temporary/${patientId}`, buildHardcodedAuthHeaders());
+export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildAuthHeaders());
+export const patientGetProfile = () => api.get('/patient/profile', buildAuthHeaders());
+export const patientUpdateProfile = (payload) => api.put('/patient/profile', payload, buildAuthHeaders());
+export const patientConvertTemporary = (patientId) => api.post(`/patient/convert/${patientId}`, null, buildAuthHeaders());
+export const patientCreateTemporary = (payload) => api.post('/patient/temporary', payload, buildAuthHeaders());
+export const patientDeleteTemporary = (patientId) => api.delete(`/patient/temporary/${patientId}`, buildAuthHeaders());
 
 // Patient allergies
-export const patientAddAllergy = (payload) => api.post('/patient/allergies', payload, buildHardcodedAuthHeaders());
-export const patientGetAllergies = () => api.get('/patient/allergies', buildHardcodedAuthHeaders());
-export const patientUpdateAllergy = (id, payload) => api.put(`/patient/allergies/${id}`, payload, buildHardcodedAuthHeaders());
-export const patientDeleteAllergy = (id) => api.delete(`/patient/allergies/${id}`, buildHardcodedAuthHeaders());
+export const patientAddAllergy = (payload) => api.post('/patient/allergies', payload, buildAuthHeaders());
+export const patientGetAllergies = () => api.get('/patient/allergies', buildAuthHeaders());
+export const patientUpdateAllergy = (id, payload) => api.put(`/patient/allergies/${id}`, payload, buildAuthHeaders());
+export const patientDeleteAllergy = (id) => api.delete(`/patient/allergies/${id}`, buildAuthHeaders());
 
 // Cart (explicit /api path strategy)
-export const cartAddItem = (payload) => apiRoot.post('/api/cart/items', payload, buildHardcodedAuthHeaders());
-export const cartGet = () => apiRoot.get('/api/cart', buildHardcodedAuthHeaders());
-export const cartUpdateItemQuantity = (itemId, payload) => apiRoot.put(`/api/cart/items/${itemId}`, payload, buildHardcodedAuthHeaders());
-export const cartRemoveItem = (itemId) => apiRoot.delete(`/api/cart/items/${itemId}`, buildHardcodedAuthHeaders());
-export const cartClear = () => apiRoot.delete('/api/cart/clear', buildHardcodedAuthHeaders());
-export const cartCheckout = () => apiRoot.post('/api/cart/checkout', null, buildHardcodedAuthHeaders());
+export const cartAddItem = (payload) => apiRoot.post('/api/cart/items', payload, buildAuthHeaders());
+export const cartGet = () => apiRoot.get('/api/cart', buildAuthHeaders());
+export const cartUpdateItemQuantity = (itemId, payload) => apiRoot.put(`/api/cart/items/${itemId}`, payload, buildAuthHeaders());
+export const cartRemoveItem = (itemId) => apiRoot.delete(`/api/cart/items/${itemId}`, buildAuthHeaders());
+export const cartClear = () => apiRoot.delete('/api/cart/clear', buildAuthHeaders());
+export const cartCheckout = () => apiRoot.post('/api/cart/checkout', null, buildAuthHeaders());
 
 // Manual review (explicit /api path strategy)
-export const manualReviewGetTasks = (status) => apiRoot.get('/api/pharmacist/tasks', withHardcodedAuthHeaders({ params: status ? { status } : {} }));
-export const manualReviewGetMyTasks = () => apiRoot.get('/api/pharmacist/tasks/my', buildHardcodedAuthHeaders());
-export const manualReviewClaimTask = (id) => apiRoot.post(`/api/pharmacist/tasks/${id}/claim`, null, buildHardcodedAuthHeaders());
-export const manualReviewCompleteTask = (id, payload) => apiRoot.post(`/api/pharmacist/tasks/${id}/complete`, payload, buildHardcodedAuthHeaders());
+export const manualReviewGetTasks = (status) => apiRoot.get('/api/pharmacist/tasks', withAuthHeaders({ params: status ? { status } : {} }));
+export const manualReviewGetMyTasks = () => apiRoot.get('/api/pharmacist/tasks/my', buildAuthHeaders());
+export const manualReviewClaimTask = (id) => apiRoot.post(`/api/pharmacist/tasks/${id}/claim`, null, buildAuthHeaders());
+export const manualReviewCompleteTask = (id, payload) => apiRoot.post(`/api/pharmacist/tasks/${id}/complete`, payload, buildAuthHeaders());
 
 
 export default api;
+
