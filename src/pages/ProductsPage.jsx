@@ -3,8 +3,22 @@ import { Link } from 'react-router-dom';
 import { Search, Filter, ShoppingCart } from 'lucide-react';
 import { medicineGetAll, medicineSearch } from '../api/axios';
 import { useCart } from '../context/CartContext';
+import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
+
+const getMedicineImageValue = (medicine) => (
+    medicine?.imageUrl ||
+    medicine?.imageURL ||
+    medicine?.medicineImageUrl ||
+    medicine?.medicineImageURL ||
+    medicine?.image ||
+    medicine?.photoUrl ||
+    medicine?.photoURL ||
+    medicine?.thumbnailUrl ||
+    medicine?.thumbnailURL ||
+    ''
+);
 
 const mapMedicineToProduct = (medicine, index) => {
     const parsedPrice = Number(medicine?.price);
@@ -30,9 +44,9 @@ const mapMedicineToProduct = (medicine, index) => {
         indications: medicine?.indications || '',
         contraindications: medicine?.contraindications || '',
         sideEffects: medicine?.sideEffects || '',
-        prescriptionRequired: Boolean(medicine?.prescriptionRequired),
+        prescriptionRequired: Boolean(medicine?.prescriptionRequired ?? medicine?.requiresPrescription),
         price: hasValidPrice ? parsedPrice : null,
-        image: medicine?.imageUrl || FALLBACK_MEDICINE_IMAGE,
+        image: resolveApiImageUrl(getMedicineImageValue(medicine), FALLBACK_MEDICINE_IMAGE),
         inStock,
     };
 };
@@ -168,6 +182,9 @@ const ProductsPage = () => {
                                             <img
                                                 src={product.image}
                                                 alt={product.name}
+                                                onError={(event) => {
+                                                    event.currentTarget.src = FALLBACK_MEDICINE_IMAGE;
+                                                }}
                                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             />
                                             {!product.inStock && (

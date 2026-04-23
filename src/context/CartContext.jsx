@@ -65,6 +65,13 @@ const toMetadata = (product) => {
     };
 };
 
+const buildCartAddPayload = (product, quantity) => ({
+    medicineName: product?.name || product?.medicineName || '',
+    pharmacyName: product?.pharmacy || product?.pharmacyName || '',
+    quantity: Number(quantity) > 0 ? Number(quantity) : 1,
+    prescriptionId: product?.prescriptionId ?? '',
+});
+
 export const useCart = () => {
     return useContext(CartContext);
 };
@@ -120,26 +127,17 @@ export const CartProvider = ({ children }) => {
             }
         });
 
-        const pharmacyId = product?.pharmacyId;
-
-        if (medicineId && pharmacyId) {
-            cartAddItem({
-                medicineId,
-                pharmacyId,
-                quantity,
-                prescriptionId: product?.prescriptionId,
-            })
-                .then((response) => {
-                    const mapped = mapServerCartToUi(response?.data, {
-                        ...cartMetadata,
-                        ...(metadata ? { [metadata.medicineId]: metadata } : {}),
-                    });
-                    setCartItems(mapped);
-                })
-                .catch(() => {
-                    // Keep local optimistic state if API call fails.
+        cartAddItem(buildCartAddPayload(product, quantity))
+            .then((response) => {
+                const mapped = mapServerCartToUi(response?.data, {
+                    ...cartMetadata,
+                    ...(metadata ? { [metadata.medicineId]: metadata } : {}),
                 });
-        }
+                setCartItems(mapped);
+            })
+            .catch(() => {
+                // Keep local optimistic state if API call fails.
+            });
     };
 
     const removeFromCart = (productId) => {
