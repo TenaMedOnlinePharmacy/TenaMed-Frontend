@@ -26,24 +26,40 @@ const readJson = (key, fallbackValue) => {
     }
 };
 
+const buildMetadataKey = (medicineName, pharmacyName) => {
+    const medicine = String(medicineName || '').trim().toLowerCase();
+    const pharmacy = String(pharmacyName || '').trim().toLowerCase();
+    if (!medicine && !pharmacy) {
+        return '';
+    }
+    return `${medicine}::${pharmacy}`;
+};
+
 const mapServerCartToUi = (serverCart, metadataByMedicineId = {}) => {
     const items = Array.isArray(serverCart?.items) ? serverCart.items : [];
 
     return items.map((item) => {
         const medicineId = item?.medicineId;
-        const metadata = medicineId ? metadataByMedicineId[medicineId] : null;
+        const metadataById = medicineId ? metadataByMedicineId[medicineId] : null;
+        const metadataByName = metadataByMedicineId[buildMetadataKey(item?.medicineName, item?.pharmacyName)] || null;
+        const metadata = metadataById || metadataByName;
         const unitPrice = Number(item?.unitPrice || 0);
+        const totalPrice = Number(item?.totalPrice || 0);
+        const quantity = Number(item?.quantity || 1);
+        const hasUnitPrice = Number.isFinite(unitPrice);
+        const hasTotalPrice = Number.isFinite(totalPrice) && quantity > 0;
+        const effectiveUnitPrice = hasUnitPrice ? unitPrice : (hasTotalPrice ? totalPrice / quantity : 0);
 
         return {
             id: item?.id || medicineId,
             cartItemId: item?.id,
             medicineId,
             pharmacyId: item?.pharmacyId,
-            quantity: Number(item?.quantity || 1),
-            price: Number.isFinite(unitPrice) ? unitPrice : 0,
-            name: metadata?.name || `Medicine ${String(medicineId || '').slice(0, 8)}`,
+            quantity,
+            price: effectiveUnitPrice,
+            name: item?.medicineName || metadata?.name || `Medicine ${String(medicineId || '').slice(0, 8)}`,
             category: metadata?.category || 'General',
-            pharmacy: metadata?.pharmacy || 'TenaMED Partner Pharmacy',
+            pharmacy: item?.pharmacyName || metadata?.pharmacy || 'TenaMED Partner Pharmacy',
             image: metadata?.image || FALLBACK_IMAGE,
             inStock: true,
         };
@@ -51,16 +67,21 @@ const mapServerCartToUi = (serverCart, metadataByMedicineId = {}) => {
 };
 
 const toMetadata = (product) => {
-    const medicineId = product?.medicineId || product?.id;
-    if (!medicineId) {
+    const medicineId = product?.medicineId || product?.id || null;
+    const medicineName = product?.name || product?.medicineName || '';
+    const pharmacyName = product?.pharmacy || product?.pharmacyName || '';
+    const metadataKey = buildMetadataKey(medicineName, pharmacyName);
+
+    if (!medicineId && !metadataKey) {
         return null;
     }
 
     return {
+        key: metadataKey,
         medicineId,
-        name: product?.name,
+        name: medicineName,
         category: product?.category,
-        pharmacy: product?.pharmacy,
+        pharmacy: pharmacyName,
         image: product?.image,
     };
 };
@@ -110,7 +131,11 @@ export const CartProvider = ({ children }) => {
     const addToCart = (product, quantity = 1) => {
         const metadata = toMetadata(product);
         if (metadata) {
-            setCartMetadata((prev) => ({ ...prev, [metadata.medicineId]: metadata }));
+            setCartMetadata((prev) => ({
+                ...prev,
+                ...(metadata.medicineId ? { [metadata.medicineId]: metadata } : {}),
+                ...(metadata.key ? { [metadata.key]: metadata } : {}),
+            }));
         }
 
         cartAddItem(buildCartAddPayload(product, quantity))
