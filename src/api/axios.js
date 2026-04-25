@@ -175,10 +175,10 @@ export const doctorVerify = (id) => api.patch(`/doctors/${id}/verify`, null, bui
 export const pharmacyCreate = (payload) => api.post('/pharmacies', payload, buildAuthHeaders());
 export const pharmacyGetById = (id) => api.get(`/pharmacies/${id}`, buildAuthHeaders());
 export const pharmacyVerify = (id) => api.post(`/pharmacies/${id}/verify`, null, buildAuthHeaders());
-export const pharmacyInvitePharmacist = (id, payload) => api.post(`/pharmacies/${id}/invite-pharmacist`, payload, buildAuthHeaders());
-export const pharmacyAddStaff = (id, payload) => api.post(`/pharmacies/${id}/staff`, payload, buildAuthHeaders());
-export const pharmacyListStaff = (id) => api.get(`/pharmacies/${id}/staff`, buildAuthHeaders());
-export const pharmacyVerifyStaff = (id, userId) => api.post(`/pharmacies/${id}/staff/${userId}/verify`, null, buildAuthHeaders());
+export const pharmacyInvitePharmacist = (id, payload) => api.post(`/pharmacies/invite-pharmacist`, payload, buildAuthHeaders());
+export const pharmacyAddStaff = (id, payload) => api.post(`/pharmacies/staff`, payload, buildAuthHeaders());
+export const pharmacyListStaff = () => api.get('/pharmacies/staff', buildAuthHeaders());
+export const pharmacyVerifyStaff = (id, userId) => api.post(`/pharmacies/staff/${userId}/verify`, null, buildAuthHeaders());
 export const pharmacistCreateFromInvite = (token, payload) => api.post('/pharmacists/create', payload, withAuthHeaders({ params: { token } }));
 
 // Orders

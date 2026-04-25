@@ -1,13 +1,66 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Package, ClipboardList, CheckCircle, XCircle, Truck, Plus, Trash2, Edit } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Package, ClipboardList, CheckCircle, XCircle, Truck, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
 import { products } from '../data/mockProducts';
 import { mockOrders } from '../data/mockOrders';
+import { pharmacyInvitePharmacist, pharmacyListStaff, pharmacyVerifyStaff } from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 const PharmacistDashboard = () => {
-    const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'inventory'
+    const { userRole } = useAuth();
+    const isPharmacyOwner = userRole === 'pharmacy';
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedTab = searchParams.get('tab');
+
+    const [activeTab, setActiveTab] = useState(requestedTab === 'team' && isPharmacyOwner ? 'team' : 'orders');
     const [inventory, setInventory] = useState(products);
     const [orders, setOrders] = useState(mockOrders);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteStatusMsg, setInviteStatusMsg] = useState('');
+    const [inviteErrorMsg, setInviteErrorMsg] = useState('');
+    const [isInviting, setIsInviting] = useState(false);
+    const [staffRows, setStaffRows] = useState([]);
+    const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+    const [staffErrorMsg, setStaffErrorMsg] = useState('');
+    const [actionLoadingByUserId, setActionLoadingByUserId] = useState({});
+
+    useEffect(() => {
+        const isTeamRequested = requestedTab === 'team';
+        if (isTeamRequested && isPharmacyOwner) {
+            setActiveTab('team');
+            return;
+        }
+        if (isTeamRequested && !isPharmacyOwner) {
+            setSearchParams({ tab: 'orders' }, { replace: true });
+        }
+    }, [isPharmacyOwner, requestedTab, setSearchParams]);
+
+    useEffect(() => {
+        if (!isPharmacyOwner) {
+            return;
+        }
+
+        setIsLoadingStaff(true);
+        setStaffErrorMsg('');
+        pharmacyListStaff()
+            .then((response) => {
+                setStaffRows(Array.isArray(response?.data) ? response.data : []);
+            })
+            .catch(() => {
+                setStaffErrorMsg('Failed to load staff list.');
+            })
+            .finally(() => {
+                setIsLoadingStaff(false);
+            });
+    }, [isPharmacyOwner]);
+
+    const pendingStaff = useMemo(() => {
+        return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && !Boolean(row?.isVerified));
+    }, [staffRows]);
+
+    const verifiedStaff = useMemo(() => {
+        return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && Boolean(row?.isVerified));
+    }, [staffRows]);
 
     const pendingOrders = orders.filter((order) => order.status === 'Pending').length;
     const acceptedOrders = orders.filter((order) => order.status === 'Accepted').length;
@@ -29,54 +82,137 @@ const PharmacistDashboard = () => {
         }
     };
 
+    const setTab = (tab) => {
+        setActiveTab(tab);
+        setSearchParams({ tab }, { replace: true });
+    };
+
+    const handleSendInvitation = async (event) => {
+        event.preventDefault();
+        setInviteStatusMsg('');
+        setInviteErrorMsg('');
+
+        if (!inviteEmail.trim()) {
+            setInviteErrorMsg('Enter pharmacist email address.');
+            return;
+        }
+
+        setIsInviting(true);
+        try {
+            const ownerPharmacyId = pendingStaff[0]?.pharmacyId || staffRows[0]?.pharmacyId;
+            if (!ownerPharmacyId) {
+                throw new Error('Pharmacy context not found for current owner account.');
+            }
+            await pharmacyInvitePharmacist(ownerPharmacyId, { email: inviteEmail.trim() });
+            setInviteEmail('');
+            setInviteStatusMsg('Invitation email sent successfully.');
+
+            const staffResponse = await pharmacyListStaff();
+            setStaffRows(Array.isArray(staffResponse?.data) ? staffResponse.data : []);
+        } catch (error) {
+            const message = error?.response?.data?.error || error?.response?.data?.message || 'Failed to send invitation.';
+            setInviteErrorMsg(message);
+        } finally {
+            setIsInviting(false);
+        }
+    };
+
+    const updateActionLoading = (userId, value) => {
+        setActionLoadingByUserId((prev) => ({
+            ...prev,
+            [userId]: value,
+        }));
+    };
+
+    const handleApproveStaff = async (staff) => {
+        const userId = staff?.userId;
+        const pharmacyId = staff?.pharmacyId;
+        if (!userId || !pharmacyId) {
+            setStaffErrorMsg('Missing staff identifiers for approval.');
+            return;
+        }
+        updateActionLoading(userId, true);
+        setStaffErrorMsg('');
+        try {
+            await pharmacyVerifyStaff(pharmacyId, userId);
+            const staffResponse = await pharmacyListStaff();
+            setStaffRows(Array.isArray(staffResponse?.data) ? staffResponse.data : []);
+        } catch (error) {
+            setStaffErrorMsg(error?.response?.data?.error || 'Failed to approve pharmacist.');
+        } finally {
+            updateActionLoading(userId, false);
+        }
+    };
+
     return (
         <div className="bg-gray-50 min-h-screen">
             <div className="bg-white shadow-sm border-b border-gray-100">
                 <div className="container mx-auto px-4 py-4 flex justify-between items-center">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Pharmacist Dashboard</h1>
+                        <h1 className="text-xl font-bold text-gray-900">{isPharmacyOwner ? 'Pharmacy Owner Dashboard' : 'Pharmacist Dashboard'}</h1>
                         <p className="text-sm text-gray-500">City Pharmacy</p>
                     </div>
                     <div className="flex bg-gray-100 p-1 rounded-lg">
                         <button
-                            onClick={() => setActiveTab('orders')}
+                            onClick={() => setTab('orders')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'orders' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Orders
                         </button>
                         <button
-                            onClick={() => setActiveTab('inventory')}
+                            onClick={() => setTab('inventory')}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'inventory' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             Inventory
                         </button>
+                        {isPharmacyOwner && (
+                            <button
+                                onClick={() => setTab('team')}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'team' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Team Invitations
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                    <div className="bg-white rounded-xl border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500">Pending Orders</p>
-                        <p className="text-2xl font-bold text-amber-600">{pendingOrders}</p>
+                {isPharmacyOwner ? (
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Pending Orders</p>
+                            <p className="text-2xl font-bold text-amber-600">{pendingOrders}</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Accepted Orders</p>
+                            <p className="text-2xl font-bold text-emerald-600">{acceptedOrders}</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Completed Orders</p>
+                            <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Sales (Mock)</p>
+                            <p className="text-2xl font-bold text-gray-900">${revenue.toFixed(2)}</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Out of Stock</p>
+                            <p className="text-2xl font-bold text-red-600">{outOfStockCount}</p>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500">Accepted Orders</p>
-                        <p className="text-2xl font-bold text-emerald-600">{acceptedOrders}</p>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Active Orders</p>
+                            <p className="text-2xl font-bold text-emerald-600">{acceptedOrders + pendingOrders}</p>
+                        </div>
+                        <div className="bg-white rounded-xl border border-gray-100 p-4">
+                            <p className="text-xs text-gray-500">Out of Stock</p>
+                            <p className="text-2xl font-bold text-red-600">{outOfStockCount}</p>
+                        </div>
                     </div>
-                    <div className="bg-white rounded-xl border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500">Completed Orders</p>
-                        <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500">Sales (Mock)</p>
-                        <p className="text-2xl font-bold text-gray-900">${revenue.toFixed(2)}</p>
-                    </div>
-                    <div className="bg-white rounded-xl border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500">Out of Stock</p>
-                        <p className="text-2xl font-bold text-red-600">{outOfStockCount}</p>
-                    </div>
-                </div>
+                )}
 
                 <div className="mb-6">
                     <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition">
@@ -148,7 +284,7 @@ const PharmacistDashboard = () => {
                             </table>
                         </div>
                     </div>
-                ) : (
+                ) : activeTab === 'inventory' ? (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -198,6 +334,102 @@ const PharmacistDashboard = () => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                <Users className="text-emerald-600" /> Team Invitations
+                            </h2>
+                        </div>
+
+                        <div className="p-6 border-b border-gray-100 space-y-4">
+                            <form onSubmit={handleSendInvitation} className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <input
+                                    type="email"
+                                    value={inviteEmail}
+                                    onChange={(event) => setInviteEmail(event.target.value)}
+                                    placeholder="pharmacist@example.com"
+                                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={isInviting}
+                                    className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition disabled:opacity-60"
+                                >
+                                    <Send className="w-4 h-4" />
+                                    {isInviting ? 'Sending...' : 'Send Invitation'}
+                                </button>
+                            </form>
+
+                            {inviteStatusMsg && <p className="text-sm text-emerald-700">{inviteStatusMsg}</p>}
+                            {inviteErrorMsg && <p className="text-sm text-red-600">{inviteErrorMsg}</p>}
+                        </div>
+
+                        <div className="p-6">
+                            <h3 className="text-sm font-semibold text-gray-900 mb-3">Pending Pharmacist Requests</h3>
+                            {isLoadingStaff ? (
+                                <p className="text-sm text-gray-500">Loading pending staff...</p>
+                            ) : pendingStaff.length === 0 ? (
+                                <p className="text-sm text-gray-500">No pending pharmacist invitations found.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {pendingStaff.map((staff) => {
+                                        const userId = staff.userId;
+                                        const isActionLoading = Boolean(actionLoadingByUserId[userId]);
+                                        return (
+                                            <div key={staff.id} className="border border-gray-100 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">User ID: {userId}</p>
+                                                    <p className="text-xs text-gray-500">Employment: {staff.employmentStatus || 'ACTIVE'} | Verified: {staff.isVerified ? 'YES' : 'NO'}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleApproveStaff(staff)}
+                                                        disabled={isActionLoading}
+                                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-60"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" /> Accept
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        title="Reject is not available in current backend staff API"
+                                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-500 bg-gray-100 cursor-not-allowed"
+                                                    >
+                                                        <XCircle className="w-4 h-4" /> Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            <div className="mt-6">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-3">Verified Pharmacists</h3>
+                                {isLoadingStaff ? (
+                                    <p className="text-sm text-gray-500">Loading verified staff...</p>
+                                ) : verifiedStaff.length === 0 ? (
+                                    <p className="text-sm text-gray-500">No verified pharmacists found.</p>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {verifiedStaff.map((staff) => (
+                                            <div key={staff.id} className="border border-gray-100 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900"> {staff.firstName} {staff.lastName}</p>
+                                                    <p className="text-xs text-gray-500">Verified: {staff.verifiedAt ? new Date(staff.verifiedAt).toLocaleDateString() : 'Yes'}</p>
+                                                </div>
+                                                <div className="text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">Active</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {staffErrorMsg && <p className="mt-3 text-sm text-red-600">{staffErrorMsg}</p>}
                         </div>
                     </div>
                 )}

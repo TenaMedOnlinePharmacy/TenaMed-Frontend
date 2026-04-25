@@ -119,6 +119,8 @@ function App() {
 
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="register/:token" element={<RegisterPage />} />
+          <Route path="register/invite/:token" element={<RegisterPage />} />
           <Route path="forgot-password" element={<ForgotPasswordPage />} />
           <Route path="*" element={<PlaceholderInfo title="404 - Page Not Found" />} />
         </Route>

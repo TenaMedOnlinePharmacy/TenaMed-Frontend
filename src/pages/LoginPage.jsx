@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Lock, Shield, User } from 'lucide-react';
-import { authLogin } from '../api/axios';
+import { authLogin, pharmacyListStaff } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { getDevBypassRole, isBuilderMode, SUPPORTED_ROLES } from '../config/devBuilderMode';
 
@@ -10,6 +10,7 @@ const roles = SUPPORTED_ROLES;
 const redirectByRole = {
     customer: '/',
     pharmacy: '/pharmacist/dashboard',
+    pharmacist: '/pharmacist/dashboard',
     hospital: '/hospital/dashboard',
 };
 
@@ -51,6 +52,18 @@ const LoginPage = () => {
                 throw new Error('Missing access token in login response.');
             }
 
+            // Temporarily persist token so role validation calls use the same auth context.
+            localStorage.setItem('tenamed_access_token', accessToken);
+
+            if (activeRole === 'pharmacy') {
+                try {
+                    await pharmacyListStaff();
+                } catch {
+                    localStorage.removeItem('tenamed_access_token');
+                    throw new Error('This account is not authorized as a pharmacy owner. Use pharmacist login instead.');
+                }
+            }
+
             login(accessToken, formData.email, activeRole);
             navigate(redirectByRole[activeRole] || '/');
         } catch (error) {
@@ -60,7 +73,7 @@ const LoginPage = () => {
                 return;
             }
 
-            const message = error?.response?.data?.message || 'Something went wrong. Please try again later.';
+            const message = error?.message || error?.response?.data?.message || 'Something went wrong. Please try again later.';
             setErrorMsg(message);
             setStatus('error');
         }

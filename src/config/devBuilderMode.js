@@ -1,4 +1,4 @@
-export const SUPPORTED_ROLES = ['customer', 'pharmacy', 'hospital'];
+export const SUPPORTED_ROLES = ['customer', 'pharmacy', 'pharmacist', 'hospital'];
 
 const BUILDER_ROLE_FALLBACK = 'customer';
 

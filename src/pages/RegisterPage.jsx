@@ -1,7 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowRight, FileText, Lock, Mail, Upload, User } from 'lucide-react';
-import { authRegister, authRegisterHospitalOwner, authRegisterPharmacy } from '../api/axios';
+import {
+    authRegister,
+    authRegisterHospitalOwner,
+    authRegisterPharmacy,
+    invitationGetByToken,
+    pharmacistCreateFromInvite,
+} from '../api/axios';
 
 const roles = ['customer', 'pharmacy', 'hospital'];
 
@@ -12,7 +18,12 @@ const roleNamesByRole = {
 
 const RegisterPage = () => {
     const navigate = useNavigate();
-    const [role, setRole] = useState('customer');
+    const { token: tokenFromPath } = useParams();
+    const [searchParams] = useSearchParams();
+    const invitationToken = searchParams.get('token') || searchParams.get('invitationToken') || tokenFromPath || '';
+    const isInviteFlow = Boolean(invitationToken);
+
+    const [role, setRole] = useState(isInviteFlow ? 'pharmacist' : 'customer');
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
@@ -20,6 +31,7 @@ const RegisterPage = () => {
         password: '',
         confirmPassword: '',
         phone: '',
+        pharmacistAddressLine1: '',
         city: '',
         region: '',
         hospitalName: '',
@@ -37,10 +49,66 @@ const RegisterPage = () => {
         pharmacyOperatingHours: '',
         pharmacyIs24Hours: false,
         pharmacyHasDelivery: false,
+        inviteLicenseNumber: '',
+        inviteLicenseExpiry: '',
+        inviteCanVerifyPrescriptions: false,
+        inviteCanManageInventory: false,
         legalFile: null,
     });
     const [status, setStatus] = useState('idle');
     const [errorMsg, setErrorMsg] = useState('');
+    const [inviteStatus, setInviteStatus] = useState(isInviteFlow ? 'loading' : 'idle');
+
+    useEffect(() => {
+        if (!isInviteFlow) {
+            return;
+        }
+
+        let isMounted = true;
+        setInviteStatus('loading');
+        setErrorMsg('');
+
+        invitationGetByToken(invitationToken)
+            .then((response) => {
+                if (!isMounted) {
+                    return;
+                }
+
+                const invitation = response?.data || {};
+                const inviteRole = String(invitation.role || '').toUpperCase();
+                const inviteState = String(invitation.status || '').toUpperCase();
+
+                if (inviteRole !== 'PHARMACIST') {
+                    setInviteStatus('invalid');
+                    setErrorMsg('This invitation is not for pharmacist onboarding.');
+                    return;
+                }
+
+                if (inviteState !== 'PENDING') {
+                    setInviteStatus('invalid');
+                    setErrorMsg('This invitation is no longer valid.');
+                    return;
+                }
+
+                setRole('pharmacist');
+                setFormData((prev) => ({
+                    ...prev,
+                    email: invitation.email || prev.email,
+                }));
+                setInviteStatus('ready');
+            })
+            .catch(() => {
+                if (!isMounted) {
+                    return;
+                }
+                setInviteStatus('invalid');
+                setErrorMsg('Invalid or expired invitation link.');
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [invitationToken, isInviteFlow]);
 
     const roleTitle = useMemo(() => role.charAt(0).toUpperCase() + role.slice(1), [role]);
     const requiresLegalFile = role === 'pharmacy' || role === 'hospital';
@@ -64,13 +132,13 @@ const RegisterPage = () => {
             return;
         }
 
-        if (requiresLegalFile && !formData.legalFile) {
+        if (!isInviteFlow && requiresLegalFile && !formData.legalFile) {
             setErrorMsg('Please upload required legal credentials for this role.');
             setStatus('error');
             return;
         }
 
-        if ((role === 'hospital' || role === 'pharmacy') && !formData.phone.trim()) {
+        if ((role === 'hospital' || role === 'pharmacy' || role === 'pharmacist') && !formData.phone.trim()) {
             setErrorMsg('Phone number is required for this role.');
             setStatus('error');
             return;
@@ -106,10 +174,14 @@ const RegisterPage = () => {
         const lastName = formData.lastName.trim();
         const email = formData.email.trim();
         const phone = formData.phone.trim();
-        const address = {
-            city: formData.city.trim(),
-            region: formData.region.trim(),
-        };
+        const address = role === 'pharmacist'
+            ? {
+                additionalProp1: formData.pharmacistAddressLine1.trim(),
+            }
+            : {
+                city: formData.city.trim(),
+                region: formData.region.trim(),
+            };
         const hasAddressValue = Object.values(address).some((value) => value.length > 0);
         if (!firstName || !lastName) {
             setErrorMsg('First name and last name are required.');
@@ -126,7 +198,29 @@ const RegisterPage = () => {
         setStatus('loading');
 
         try {
-            if (role === 'hospital') {
+            if (role === 'pharmacist') {
+                if (!invitationToken) {
+                    setErrorMsg('Pharmacist registration requires an invitation link token in the URL.');
+                    setStatus('error');
+                    return;
+                }
+                await pharmacistCreateFromInvite(invitationToken, {
+                    user: {
+                        email,
+                        password: formData.password,
+                        firstName,
+                        lastName,
+                        phone,
+                        address: hasAddressValue ? address : {},
+                    },
+                    pharmacist: {
+                        licenseNumber: formData.inviteLicenseNumber.trim() || null,
+                        licenseExpiry: formData.inviteLicenseExpiry || null,
+                        canVerifyPrescriptions: Boolean(formData.inviteCanVerifyPrescriptions),
+                        canManageInventory: Boolean(formData.inviteCanManageInventory),
+                    },
+                });
+            } else if (role === 'hospital') {
                 const payload = new FormData();
                 payload.append('owner.email', email);
                 payload.append('owner.password', formData.password);
@@ -184,21 +278,35 @@ const RegisterPage = () => {
             <div className="max-w-2xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Create Account</h2>
-                    <p className="mt-2 text-sm text-gray-600">Join TenaMed as a {roleTitle}</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                        {isInviteFlow ? 'Complete pharmacist onboarding from your invitation link.' : `Join TenaMed as a ${roleTitle}`}
+                    </p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 bg-gray-100 p-1 rounded-lg gap-1">
-                    {roles.map((entry) => (
-                        <button
-                            key={entry}
-                            type="button"
-                            onClick={() => setRole(entry)}
-                            className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            {entry}
-                        </button>
-                    ))}
-                </div>
+                {isInviteFlow ? (
+                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                        Invitation mode: role is locked to pharmacist and your invited email is prefilled.
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-2 md:grid-cols-3 bg-gray-100 p-1 rounded-lg gap-1">
+                        {roles.map((entry) => (
+                            <button
+                                key={entry}
+                                type="button"
+                                onClick={() => setRole(entry)}
+                                className={`py-2 text-xs md:text-sm font-medium rounded-md transition-all duration-200 capitalize ${role === entry ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                {entry}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {isInviteFlow && inviteStatus === 'loading' && (
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                        Validating invitation token...
+                    </div>
+                )}
 
                 <form className="space-y-6" onSubmit={handleSubmit}>
                     <div className="space-y-4">
@@ -224,16 +332,16 @@ const RegisterPage = () => {
                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                     <Mail className="h-5 w-5 text-gray-400" />
                                 </div>
-                                <input id="email" name="email" type="email" required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" placeholder="name@example.com" value={formData.email} onChange={handleChange} />
+                                <input id="email" name="email" type="email" required disabled={isInviteFlow} className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:text-gray-500" placeholder="name@example.com" value={formData.email} onChange={handleChange} />
                             </div>
                         </div>
 
                         <div>
                             <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                            <input id="phone" name="phone" type="tel" required={role === 'hospital' || role === 'pharmacy'} className="w-full p-3 border border-gray-300 rounded-lg" value={formData.phone} onChange={handleChange} placeholder="+251 9..." />
+                            <input id="phone" name="phone" type="tel" required={role === 'hospital' || role === 'pharmacy' || role === 'pharmacist'} className="w-full p-3 border border-gray-300 rounded-lg" value={formData.phone} onChange={handleChange} placeholder="+251 9..." />
                         </div>
 
-                        {role === 'customer' && (
+                        {role === 'customer' && !isInviteFlow && (
                             <div className="space-y-4">
                                 <h3 className="text-sm font-semibold text-gray-800">Address (Optional)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -249,7 +357,7 @@ const RegisterPage = () => {
                             </div>
                         )}
 
-                        {role === 'hospital' && (
+                        {role === 'hospital' && !isInviteFlow && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="hospitalName" className="block text-sm font-medium text-gray-700 mb-1">Hospital Name</label>
@@ -262,7 +370,7 @@ const RegisterPage = () => {
                             </div>
                         )}
 
-                        {role === 'pharmacy' && (
+                        {role === 'pharmacy' && !isInviteFlow && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="pharmacyName" className="block text-sm font-medium text-gray-700 mb-1">Pharmacy Name</label>
@@ -356,7 +464,53 @@ const RegisterPage = () => {
                             </div>
                         </div>
 
-                        {requiresLegalFile && (
+                        {role === 'pharmacist' && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-gray-200 p-4">
+                                <div>
+                                    <label htmlFor="pharmacistAddressLine1" className="block text-sm font-medium text-gray-700 mb-1">Address (additionalProp1)</label>
+                                    <input id="pharmacistAddressLine1" name="pharmacistAddressLine1" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.pharmacistAddressLine1} onChange={handleChange} placeholder="string" />
+                                </div>
+                                <div>
+                                    <label htmlFor="inviteLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+                                    <input id="inviteLicenseNumber" name="inviteLicenseNumber" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.inviteLicenseNumber} onChange={handleChange} placeholder="string" />
+                                </div>
+                                <div>
+                                    <label htmlFor="inviteLicenseExpiry" className="block text-sm font-medium text-gray-700 mb-1">License Expiry</label>
+                                    <input id="inviteLicenseExpiry" name="inviteLicenseExpiry" type="date" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.inviteLicenseExpiry} onChange={handleChange} />
+                                </div>
+                                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <label htmlFor="inviteCanVerifyPrescriptions" className="flex items-center gap-2 rounded-lg border border-gray-300 p-3 text-sm text-gray-700">
+                                        <input
+                                            id="inviteCanVerifyPrescriptions"
+                                            name="inviteCanVerifyPrescriptions"
+                                            type="checkbox"
+                                            checked={formData.inviteCanVerifyPrescriptions}
+                                            onChange={handleChange}
+                                            className="h-4 w-4 text-emerald-600 border-gray-300 rounded"
+                                        />
+                                        Can verify prescriptions
+                                    </label>
+                                    <label htmlFor="inviteCanManageInventory" className="flex items-center gap-2 rounded-lg border border-gray-300 p-3 text-sm text-gray-700">
+                                        <input
+                                            id="inviteCanManageInventory"
+                                            name="inviteCanManageInventory"
+                                            type="checkbox"
+                                            checked={formData.inviteCanManageInventory}
+                                            onChange={handleChange}
+                                            className="h-4 w-4 text-emerald-600 border-gray-300 rounded"
+                                        />
+                                        Can manage inventory
+                                    </label>
+                                </div>
+                                {!invitationToken && (
+                                    <div className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                        Open this page from invitation URL with token to complete pharmacist registration.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {!isInviteFlow && requiresLegalFile && (
                             <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
                                 <label className="block text-sm font-medium text-emerald-900 mb-2">Legal / Credential Documents</label>
                                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-emerald-300 border-dashed rounded-md bg-white relative">
@@ -392,10 +546,10 @@ const RegisterPage = () => {
 
                     <button
                         type="submit"
-                        disabled={status === 'loading'}
+                        disabled={status === 'loading' || (isInviteFlow && inviteStatus !== 'ready')}
                         className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
                     >
-                        {status === 'loading' ? 'Creating Account...' : `Create ${roleTitle} Account`}
+                        {status === 'loading' ? 'Creating Account...' : isInviteFlow ? 'Complete Pharmacist Onboarding' : `Create ${roleTitle} Account`}
                         <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </form>

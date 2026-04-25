@@ -10,7 +10,7 @@ const MainLayout = () => {
     const location = useLocation();
     const { getCartCount, refreshCart } = useCart();
     const { isAuthenticated, userRole, userEmail, logout } = useAuth();
-    const shouldShowFooter = !['/login', '/register'].includes(location.pathname);
+    const shouldShowFooter = location.pathname !== '/login' && !location.pathname.startsWith('/register');
 
     const navByRole = {
         guest: [
@@ -27,6 +27,7 @@ const MainLayout = () => {
         ],
         pharmacy: [
             { to: '/pharmacist/dashboard', label: 'Dashboard' },
+            { to: '/pharmacist/dashboard?tab=team', label: 'Team Invitations' },
             { to: '/pharmacist/prescription-review', label: 'Prescription Review' },
         ],
         pharmacist: [
