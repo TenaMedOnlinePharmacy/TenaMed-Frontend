@@ -183,9 +183,10 @@ export const pharmacistCreateFromInvite = (token, payload) => api.post('/pharmac
 
 // Orders
 export const orderCreate = (payload) => api.post('/orders', payload, buildAuthHeaders());
-export const orderAccept = (id) => api.post(`/orders/${id}/accept`, null, buildAuthHeaders());
-export const orderReject = (id, payload) => api.post(`/orders/${id}/reject`, payload, buildAuthHeaders());
+export const orderAccept = (id) => api.post('/orders/accept', { orderId: id }, buildAuthHeaders());
+export const orderReject = (id, payload = {}) => api.post('/orders/reject', { orderId: id, ...payload }, buildAuthHeaders());
 export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}/payment-status`, payload, buildAuthHeaders());
+export const pharmacyGetIncomingOrders = () => api.get('/orders/pharmacyOrders', buildAuthHeaders());
 
 // Prescription inventory matching
 export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pharmacy/prescriptions/${prescriptionId}/inventory-matches`, buildAuthHeaders());

@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Package, ClipboardList, CheckCircle, XCircle, Truck, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
+import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
 import { products } from '../data/mockProducts';
-import { mockOrders } from '../data/mockOrders';
-import { pharmacyInvitePharmacist, pharmacyListStaff, pharmacyVerifyStaff } from '../api/axios';
+import { orderAccept, orderReject, pharmacyGetIncomingOrders, pharmacyInvitePharmacist, pharmacyListStaff, pharmacyVerifyStaff } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const PharmacistDashboard = () => {
     const { userRole } = useAuth();
@@ -14,7 +14,10 @@ const PharmacistDashboard = () => {
 
     const [activeTab, setActiveTab] = useState(requestedTab === 'team' && isPharmacyOwner ? 'team' : 'orders');
     const [inventory, setInventory] = useState(products);
-    const [orders, setOrders] = useState(mockOrders);
+    const [orders, setOrders] = useState([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+    const [ordersErrorMsg, setOrdersErrorMsg] = useState('');
+    const [actionLoadingByOrderId, setActionLoadingByOrderId] = useState({});
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteStatusMsg, setInviteStatusMsg] = useState('');
     const [inviteErrorMsg, setInviteErrorMsg] = useState('');
@@ -54,6 +57,24 @@ const PharmacistDashboard = () => {
             });
     }, [isPharmacyOwner]);
 
+    const loadIncomingOrders = async () => {
+        setIsLoadingOrders(true);
+        setOrdersErrorMsg('');
+
+        try {
+            const response = await pharmacyGetIncomingOrders();
+            setOrders(Array.isArray(response?.data) ? response.data : []);
+        } catch {
+            setOrdersErrorMsg('Failed to load incoming orders.');
+        } finally {
+            setIsLoadingOrders(false);
+        }
+    };
+
+    useEffect(() => {
+        loadIncomingOrders();
+    }, []);
+
     const pendingStaff = useMemo(() => {
         return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && !Boolean(row?.isVerified));
     }, [staffRows]);
@@ -62,18 +83,24 @@ const PharmacistDashboard = () => {
         return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && Boolean(row?.isVerified));
     }, [staffRows]);
 
-    const pendingOrders = orders.filter((order) => order.status === 'Pending').length;
-    const acceptedOrders = orders.filter((order) => order.status === 'Accepted').length;
-    const completedOrders = orders.filter((order) => order.status === 'Delivered').length;
-    const revenue = orders.reduce((sum, order) => sum + order.total, 0);
-    const outOfStockCount = inventory.filter((item) => !item.inStock).length;
+    const incomingOrders = useMemo(() => {
+        return orders.map((order) => ({
+            orderId: order?.orderId || order?.id || 'UNKNOWN',
+            prescriptionImage: order?.prescriptionImage || '',
+            orderItems: Array.isArray(order?.orderItems) ? order.orderItems : [],
+            type: order?.type || 'UNKNOWN',
+            highRisk: order?.highRisk === true,
+            status: order?.status || 'UNKNOWN',
+            confidenceScore: typeof order?.confidenceScore === 'number' ? order.confidenceScore : null,
+            totalAmount: typeof order?.totalAmount === 'number' ? order.totalAmount : 0,
+        }));
+    }, [orders]);
 
-    // Order Actions
-    const updateOrderStatus = (orderId, newStatus) => {
-        setOrders(orders.map(order =>
-            order.id === orderId ? { ...order, status: newStatus } : order
-        ));
-    };
+    const incomingOrderCount = incomingOrders.length;
+    const highRiskOrderCount = incomingOrders.filter((order) => order.highRisk).length;
+    const ordersWithImages = incomingOrders.filter((order) => Boolean(order.prescriptionImage)).length;
+    const totalOrderAmount = incomingOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+    const outOfStockCount = inventory.filter((item) => !item.inStock).length;
 
     // Inventory Actions (Mock)
     const handleDeleteItem = (id) => {
@@ -122,6 +149,54 @@ const PharmacistDashboard = () => {
             ...prev,
             [userId]: value,
         }));
+    };
+
+    const updateOrderActionLoading = (orderId, value) => {
+        setActionLoadingByOrderId((prev) => ({
+            ...prev,
+            [orderId]: value,
+        }));
+    };
+
+    const handleAcceptOrder = async (orderId) => {
+        if (!orderId || orderId === 'UNKNOWN') {
+            setOrdersErrorMsg('Missing order id for acceptance.');
+            return;
+        }
+
+        updateOrderActionLoading(orderId, true);
+        setOrdersErrorMsg('');
+        try {
+            await orderAccept(orderId);
+            await loadIncomingOrders();
+        } catch (error) {
+            setOrdersErrorMsg(error?.response?.data?.error || 'Failed to accept order.');
+        } finally {
+            updateOrderActionLoading(orderId, false);
+        }
+    };
+
+    const handleRejectOrder = async (orderId) => {
+        if (!orderId || orderId === 'UNKNOWN') {
+            setOrdersErrorMsg('Missing order id for rejection.');
+            return;
+        }
+
+        const rejectionReason = window.prompt('Enter rejection reason');
+        if (!rejectionReason || !rejectionReason.trim()) {
+            return;
+        }
+
+        updateOrderActionLoading(orderId, true);
+        setOrdersErrorMsg('');
+        try {
+            await orderReject(orderId, { rejectionReason: rejectionReason.trim() });
+            await loadIncomingOrders();
+        } catch (error) {
+            setOrdersErrorMsg(error?.response?.data?.error || 'Failed to reject order.');
+        } finally {
+            updateOrderActionLoading(orderId, false);
+        }
     };
 
     const handleApproveStaff = async (staff) => {
@@ -181,20 +256,20 @@ const PharmacistDashboard = () => {
                 {isPharmacyOwner ? (
                     <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
-                            <p className="text-xs text-gray-500">Pending Orders</p>
-                            <p className="text-2xl font-bold text-amber-600">{pendingOrders}</p>
+                            <p className="text-xs text-gray-500">Incoming Orders</p>
+                            <p className="text-2xl font-bold text-amber-600">{incomingOrderCount}</p>
                         </div>
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
-                            <p className="text-xs text-gray-500">Accepted Orders</p>
-                            <p className="text-2xl font-bold text-emerald-600">{acceptedOrders}</p>
+                            <p className="text-xs text-gray-500">High Risk Orders</p>
+                            <p className="text-2xl font-bold text-red-600">{highRiskOrderCount}</p>
                         </div>
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
-                            <p className="text-xs text-gray-500">Completed Orders</p>
-                            <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
+                            <p className="text-xs text-gray-500">Prescription Images</p>
+                            <p className="text-2xl font-bold text-emerald-600">{ordersWithImages}</p>
                         </div>
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
-                            <p className="text-xs text-gray-500">Sales (Mock)</p>
-                            <p className="text-2xl font-bold text-gray-900">${revenue.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">Total Amount</p>
+                            <p className="text-2xl font-bold text-gray-900">${totalOrderAmount.toFixed(2)}</p>
                         </div>
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
                             <p className="text-xs text-gray-500">Out of Stock</p>
@@ -204,8 +279,8 @@ const PharmacistDashboard = () => {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
-                            <p className="text-xs text-gray-500">Active Orders</p>
-                            <p className="text-2xl font-bold text-emerald-600">{acceptedOrders + pendingOrders}</p>
+                            <p className="text-xs text-gray-500">Incoming Orders</p>
+                            <p className="text-2xl font-bold text-emerald-600">{incomingOrderCount}</p>
                         </div>
                         <div className="bg-white rounded-xl border border-gray-100 p-4">
                             <p className="text-xs text-gray-500">Out of Stock</p>
@@ -227,59 +302,102 @@ const PharmacistDashboard = () => {
                                 <ClipboardList className="text-emerald-600" /> Incoming Orders
                             </h2>
                         </div>
+                        {ordersErrorMsg && <div className="px-6 pt-4 text-sm text-red-600">{ordersErrorMsg}</div>}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-500 text-sm">
                                     <tr>
-                                        <th className="p-4 font-medium">Order ID</th>
-                                        <th className="p-4 font-medium">Customer</th>
-                                        <th className="p-4 font-medium">Items</th>
-                                        <th className="p-4 font-medium">Total</th>
+                                        <th className="p-4 font-medium">Prescription Image</th>
+                                        <th className="p-4 font-medium">Medicine Names</th>
+                                        <th className="p-4 font-medium">Risk Type</th>
                                         <th className="p-4 font-medium">Status</th>
+                                        <th className="p-4 font-medium">Confidence Score</th>
+                                        <th className="p-4 font-medium">Total Amount</th>
                                         <th className="p-4 font-medium">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {orders.map(order => (
-                                        <tr key={order.id} className="hover:bg-gray-50 transition">
-                                            <td className="p-4 font-medium text-gray-900">{order.id}</td>
-                                            <td className="p-4 text-gray-600">{order.customer}</td>
-                                            <td className="p-4 text-gray-600 text-sm">
-                                                {order.items.map((item, idx) => (
-                                                    <div key={idx}>{item.name} x{item.quantity}</div>
-                                                ))}
-                                            </td>
-                                            <td className="p-4 font-medium text-gray-900">${order.total.toFixed(2)}</td>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${order.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                        order.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' :
-                                                            order.status === 'Dispatched' ? 'bg-purple-100 text-purple-700' :
-                                                                'bg-green-100 text-green-700'
-                                                    }`}>
-                                                    {order.status}
-                                                </span>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-2">
-                                                    {order.status === 'Pending' && (
-                                                        <>
-                                                            <button onClick={() => updateOrderStatus(order.id, 'Accepted')} className="p-1 text-green-600 hover:bg-green-50 rounded" title="Accept">
+                                    {isLoadingOrders ? (
+                                        <tr>
+                                            <td className="p-4 text-sm text-gray-500" colSpan={6}>Loading incoming orders...</td>
+                                        </tr>
+                                    ) : incomingOrders.length === 0 ? (
+                                        <tr>
+                                            <td className="p-4 text-sm text-gray-500" colSpan={6}>No incoming orders found.</td>
+                                        </tr>
+                                    ) : (
+                                        incomingOrders.map((order) => {
+                                            const medicineNames = order.orderItems.length > 0
+                                                ? order.orderItems.map((item) => item?.medicineName || 'Unnamed medicine').join(', ')
+                                                : 'No items provided';
+
+                                            return (
+                                                <tr key={order.orderId} className="hover:bg-gray-50 transition align-top">
+                                                    <td className="p-4">
+                                                        {order.prescriptionImage ? (
+                                                            <a href={resolveApiImageUrl(order.prescriptionImage, order.prescriptionImage)} target="_blank" rel="noreferrer" className="inline-block">
+                                                                <img
+                                                                    src={resolveApiImageUrl(order.prescriptionImage, order.prescriptionImage)}
+                                                                    alt="Prescription"
+                                                                    className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                                                                />
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-500">No image</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4 text-gray-600 text-sm">
+                                                        {order.orderItems.map((item, index) => (
+                                                            <div key={`${order.orderId}-${index}`} className="mb-1 last:mb-0">
+                                                                <span className="font-medium text-gray-900">{item?.medicineName || 'Unnamed medicine'}</span>
+                                                                <span className="text-gray-500"> x{item?.quantity ?? 0}</span>
+                                                            </div>
+                                                        ))}
+                                                        {order.orderItems.length === 0 && <span className="text-gray-500">{medicineNames}</span>}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex flex-col gap-2">
+                                                            <span className={`inline-flex w-fit px-2 py-1 rounded-full text-xs font-semibold ${order.highRisk ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                                                                {order.highRisk ? 'High Risk' : 'Standard'}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">Type: {order.type}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <span className={`inline-flex w-fit px-2 py-1 rounded-full text-xs font-semibold ${order.status === 'PENDING_REVIEW' ? 'bg-amber-100 text-amber-700' : order.status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-700' : order.status === 'REJECTED' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                                            {order.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 text-gray-900 font-medium">
+                                                        {order.confidenceScore === null ? 'N/A' : `${Math.round(order.confidenceScore * 100)}%`}
+                                                    </td>
+                                                    <td className="p-4 font-medium text-gray-900">${order.totalAmount.toFixed(2)}</td>
+                                                    <td className="p-4">
+                                                        <div className="flex gap-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleAcceptOrder(order.orderId)}
+                                                                disabled={Boolean(actionLoadingByOrderId[order.orderId])}
+                                                                className="p-2 text-green-600 hover:bg-green-50 rounded disabled:opacity-60"
+                                                                title="Accept order"
+                                                            >
                                                                 <CheckCircle className="w-5 h-5" />
                                                             </button>
-                                                            <button onClick={() => updateOrderStatus(order.id, 'Rejected')} className="p-1 text-red-600 hover:bg-red-50 rounded" title="Reject">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRejectOrder(order.orderId)}
+                                                                disabled={Boolean(actionLoadingByOrderId[order.orderId])}
+                                                                className="p-2 text-red-600 hover:bg-red-50 rounded disabled:opacity-60"
+                                                                title="Reject order"
+                                                            >
                                                                 <XCircle className="w-5 h-5" />
                                                             </button>
-                                                        </>
-                                                    )}
-                                                    {order.status === 'Accepted' && (
-                                                        <button onClick={() => updateOrderStatus(order.id, 'Dispatched')} className="p-1 text-emerald-600 hover:bg-emerald-50 rounded flex items-center gap-1 text-sm font-medium">
-                                                            <Truck className="w-4 h-4" /> Dispatch
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -381,7 +499,7 @@ const PharmacistDashboard = () => {
                                         return (
                                             <div key={staff.id} className="border border-gray-100 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                                                 <div>
-                                                    <p className="text-sm font-medium text-gray-900">User ID: {userId}</p>
+                                                    <p className="text-sm font-medium text-gray-900">{staff.firstName} {staff.lastName}</p>
                                                     <p className="text-xs text-gray-500">Employment: {staff.employmentStatus || 'ACTIVE'} | Verified: {staff.isVerified ? 'YES' : 'NO'}</p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
