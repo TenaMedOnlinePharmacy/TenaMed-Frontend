@@ -1,8 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
-import { products } from '../data/mockProducts';
-import { orderAccept, orderReject, pharmacyGetIncomingOrders, pharmacyInvitePharmacist, pharmacyListStaff, pharmacyVerifyStaff } from '../api/axios';
+import {
+    inventoryDeleteBatch,
+    inventoryEditBatch,
+    inventoryGetBatchForEdit,
+    inventoryList,
+    orderAccept,
+    orderReject,
+    pharmacyGetIncomingOrders,
+    pharmacyInvitePharmacist,
+    pharmacyListStaff,
+    pharmacyVerifyStaff,
+} from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { resolveApiImageUrl } from '../utils/imageUrl';
 
@@ -14,7 +24,10 @@ const PharmacistDashboard = () => {
     const requestedTab = searchParams.get('tab');
 
     const [activeTab, setActiveTab] = useState(requestedTab === 'team' && isPharmacyOwner ? 'team' : 'orders');
-    const [inventory, setInventory] = useState(products);
+    const [inventory, setInventory] = useState([]);
+    const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+    const [inventoryErrorMsg, setInventoryErrorMsg] = useState('');
+    const [batchActionLoadingById, setBatchActionLoadingById] = useState({});
     const [orders, setOrders] = useState([]);
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
     const [ordersErrorMsg, setOrdersErrorMsg] = useState('');
@@ -72,9 +85,30 @@ const PharmacistDashboard = () => {
         }
     };
 
+    const loadInventory = async () => {
+        setIsLoadingInventory(true);
+        setInventoryErrorMsg('');
+
+        try {
+            const response = await inventoryList();
+            setInventory(Array.isArray(response?.data) ? response.data : []);
+        } catch {
+            setInventoryErrorMsg('Failed to load inventory list.');
+        } finally {
+            setIsLoadingInventory(false);
+        }
+    };
+
     useEffect(() => {
         loadIncomingOrders();
     }, []);
+
+    useEffect(() => {
+        if (activeTab !== 'inventory') {
+            return;
+        }
+        loadInventory();
+    }, [activeTab]);
 
     const pendingStaff = useMemo(() => {
         return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && !Boolean(row?.isVerified));
@@ -101,14 +135,7 @@ const PharmacistDashboard = () => {
     const highRiskOrderCount = incomingOrders.filter((order) => order.highRisk).length;
     const ordersWithImages = incomingOrders.filter((order) => Boolean(order.prescriptionImage)).length;
     const totalOrderAmount = incomingOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-    const outOfStockCount = inventory.filter((item) => !item.inStock).length;
-
-    // Inventory Actions (Mock)
-    const handleDeleteItem = (id) => {
-        if (confirm('Are you sure you want to delete this item?')) {
-            setInventory(inventory.filter(item => item.id !== id));
-        }
-    };
+    const outOfStockCount = inventory.filter((item) => Number(item?.remainingQuantity ?? 0) <= 0).length;
 
     const setTab = (tab) => {
         setActiveTab(tab);
@@ -157,6 +184,80 @@ const PharmacistDashboard = () => {
             ...prev,
             [orderId]: value,
         }));
+    };
+
+    const updateBatchActionLoading = (batchId, value) => {
+        setBatchActionLoadingById((prev) => ({
+            ...prev,
+            [batchId]: value,
+        }));
+    };
+
+    const handleDeleteBatch = async (batchId) => {
+        if (!batchId) {
+            setInventoryErrorMsg('Missing batch id for deletion.');
+            return;
+        }
+        if (!window.confirm('Are you sure you want to delete this batch?')) {
+            return;
+        }
+
+        updateBatchActionLoading(batchId, true);
+        setInventoryErrorMsg('');
+        try {
+            await inventoryDeleteBatch(batchId);
+            await loadInventory();
+        } catch (error) {
+            setInventoryErrorMsg(error?.response?.data?.error || 'Failed to delete batch.');
+        } finally {
+            updateBatchActionLoading(batchId, false);
+        }
+    };
+
+    const handleEditBatch = async (batchId) => {
+        if (!batchId) {
+            setInventoryErrorMsg('Missing batch id for editing.');
+            return;
+        }
+
+        updateBatchActionLoading(batchId, true);
+        setInventoryErrorMsg('');
+        try {
+            const detailsResponse = await inventoryGetBatchForEdit(batchId);
+            const existingBatch = detailsResponse?.data?.batch;
+            if (!existingBatch) {
+                throw new Error('Batch details are missing.');
+            }
+
+            const nextUnitPriceRaw = window.prompt('Enter unit price', existingBatch.unitCost ?? '');
+            if (nextUnitPriceRaw === null) {
+                return;
+            }
+            const nextSellingPriceRaw = window.prompt('Enter selling price', existingBatch.sellingPrice ?? '');
+            if (nextSellingPriceRaw === null) {
+                return;
+            }
+
+            const nextUnitPrice = Number(nextUnitPriceRaw);
+            const nextSellingPrice = Number(nextSellingPriceRaw);
+            if (Number.isNaN(nextUnitPrice) || Number.isNaN(nextSellingPrice)) {
+                setInventoryErrorMsg('Unit price and selling price must be valid numbers.');
+                return;
+            }
+
+            const payload = {
+                ...existingBatch,
+                unitCost: nextUnitPrice,
+                sellingPrice: nextSellingPrice,
+            };
+
+            await inventoryEditBatch(batchId, payload, null);
+            await loadInventory();
+        } catch (error) {
+            setInventoryErrorMsg(error?.response?.data?.error || error?.message || 'Failed to edit batch.');
+        } finally {
+            updateBatchActionLoading(batchId, false);
+        }
     };
 
     const handleAcceptOrder = async (orderId) => {
@@ -417,44 +518,98 @@ const PharmacistDashboard = () => {
                                 <Plus className="w-4 h-4" /> Add Item
                             </button>
                         </div>
+                        {inventoryErrorMsg && <div className="px-6 pt-4 text-sm text-red-600">{inventoryErrorMsg}</div>}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-gray-50 text-gray-500 text-sm">
                                     <tr>
                                         <th className="p-4 font-medium">Image</th>
-                                        <th className="p-4 font-medium">Name</th>
-                                        <th className="p-4 font-medium">Category</th>
-                                        <th className="p-4 font-medium">Price</th>
-                                        <th className="p-4 font-medium">Stock</th>
-                                        <th className="p-4 font-medium">Actions</th>
+                                        <th className="p-4 font-medium">Medicine Name</th>
+                                        <th className="p-4 font-medium">Brand</th>
+                                        <th className="p-4 font-medium">Manufacturer</th>
+                                        <th className="p-4 font-medium">Total Qty</th>
+                                        <th className="p-4 font-medium">Remaining Qty</th>
+                                        <th className="p-4 font-medium">Batch Prices</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
-                                    {inventory.map(item => (
-                                        <tr key={item.id} className="hover:bg-gray-50 transition">
-                                            <td className="p-4">
-                                                <div className="w-10 h-10 bg-gray-50 rounded flex items-center justify-center">
-                                                    <img src={item.image} alt="" className="w-8 h-8 object-contain" />
-                                                </div>
-                                            </td>
-                                            <td className="p-4 font-medium text-gray-900">{item.name}</td>
-                                            <td className="p-4 text-gray-600">{item.category}</td>
-                                            <td className="p-4 text-gray-900">${item.price.toFixed(2)}</td>
-                                            <td className="p-4">
-                                                {item.inStock ? (
-                                                    <span className="text-green-600 font-medium text-sm">In Stock</span>
-                                                ) : (
-                                                    <span className="text-red-500 font-medium text-sm">Out of Stock</span>
-                                                )}
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex gap-2">
-                                                    <button className="text-gray-400 hover:text-emerald-600 transition"><Edit className="w-4 h-4" /></button>
-                                                    <button onClick={() => handleDeleteItem(item.id)} className="text-gray-400 hover:text-red-600 transition"><Trash2 className="w-4 h-4" /></button>
-                                                </div>
-                                            </td>
+                                    {isLoadingInventory ? (
+                                        <tr>
+                                            <td className="p-4 text-sm text-gray-500" colSpan={7}>Loading inventory...</td>
                                         </tr>
-                                    ))}
+                                    ) : inventory.length === 0 ? (
+                                        <tr>
+                                            <td className="p-4 text-sm text-gray-500" colSpan={7}>No inventory items found.</td>
+                                        </tr>
+                                    ) : (
+                                        inventory.map((item) => (
+                                            <tr key={item.inventoryId || item.productId} className="hover:bg-gray-50 transition align-top">
+                                                <td className="p-4">
+                                                    {item?.imageUrl ? (
+                                                        <a href={resolveApiImageUrl(item.imageUrl, item.imageUrl)} target="_blank" rel="noreferrer" className="inline-block">
+                                                            <img
+                                                                src={resolveApiImageUrl(item.imageUrl, item.imageUrl)}
+                                                                alt={item?.medicineName || 'Medicine image'}
+                                                                className="h-14 w-14 rounded-lg object-cover border border-gray-200"
+                                                            />
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-500">No image</span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4 font-medium text-gray-900">{item?.medicineName || 'N/A'}</td>
+                                                <td className="p-4 text-gray-700">{item?.brand || 'N/A'}</td>
+                                                <td className="p-4 text-gray-700">{item?.manufacturer || 'N/A'}</td>
+                                                <td className="p-4 text-gray-900 font-medium">{item?.totalQuantity ?? 0}</td>
+                                                <td className="p-4">
+                                                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${Number(item?.remainingQuantity ?? 0) > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
+                                                        {item?.remainingQuantity ?? 0}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 min-w-[340px]">
+                                                    {Array.isArray(item?.batchPrices) && item.batchPrices.length > 0 ? (
+                                                        <div className="space-y-2">
+                                                            {item.batchPrices.map((batch) => {
+                                                                const batchId = batch?.batchId;
+                                                                const isBatchActionLoading = Boolean(batchActionLoadingById[batchId]);
+                                                                return (
+                                                                    <div key={batchId || `${item?.inventoryId}-batch`} className="rounded-lg border border-gray-200 p-3 bg-gray-50">
+                                                                        <div className="text-xs text-gray-500 mb-2">Batch Number: {batch?.batchNumber || 'N/A'}</div>
+                                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                                            <div className="text-sm text-gray-700">
+                                                                                <span className="mr-4">Unit Price: <span className="font-semibold text-gray-900">${Number(batch?.unitPrice ?? 0).toFixed(2)}</span></span>
+                                                                                <span>Selling Price: <span className="font-semibold text-gray-900">${Number(batch?.sellingPrice ?? 0).toFixed(2)}</span></span>
+                                                                            </div>
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleEditBatch(batchId)}
+                                                                                    disabled={isBatchActionLoading}
+                                                                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-60"
+                                                                                >
+                                                                                    <Edit className="w-3.5 h-3.5" /> Edit
+                                                                                </button>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleDeleteBatch(batchId)}
+                                                                                    disabled={isBatchActionLoading}
+                                                                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-60"
+                                                                                >
+                                                                                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-sm text-gray-500">No batch prices</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>
