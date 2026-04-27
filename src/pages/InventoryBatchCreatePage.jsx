@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, PackagePlus, Save, X } from 'lucide-react';
-import { inventoryAddBatch } from '../api/axios';
+import { inventoryAddBatch, inventoryEditBatch, inventoryGetBatchForEdit } from '../api/axios';
+import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const initialFormState = {
     imageFile: null,
@@ -20,8 +21,12 @@ const initialFormState = {
 };
 const InventoryBatchCreatePage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const batchId = searchParams.get('batchId');
+    const isEditMode = Boolean(batchId);
     const [formData, setFormData] = useState(initialFormState);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingBatch, setIsLoadingBatch] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -62,11 +67,52 @@ const InventoryBatchCreatePage = () => {
 
     useEffect(() => {
         return () => {
-            if (formData.imagePreview) {
+            if (formData.imagePreview && formData.imagePreview.startsWith('blob:')) {
                 URL.revokeObjectURL(formData.imagePreview);
             }
         };
     }, [formData.imagePreview]);
+
+    useEffect(() => {
+        if (!isEditMode) {
+            return;
+        }
+
+        const loadBatch = async () => {
+            setIsLoadingBatch(true);
+            setErrorMsg('');
+            try {
+                const response = await inventoryGetBatchForEdit(batchId);
+                const loadedBatch = response?.data?.batch;
+                if (!loadedBatch) {
+                    throw new Error('Batch details not found.');
+                }
+
+                setFormData((prev) => ({
+                    ...prev,
+                    productId: loadedBatch.productId || '',
+                    medicineName: loadedBatch.medicineName || '',
+                    brandName: loadedBatch.brandName || '',
+                    manufacturer: loadedBatch.manufacturer || '',
+                    batchNumber: loadedBatch.batchNumber || '',
+                    manufacturingDate: loadedBatch.manufacturingDate || '',
+                    expiryDate: loadedBatch.expiryDate || '',
+                    quantity: loadedBatch.quantity?.toString() || '',
+                    unitCost: loadedBatch.unitCost?.toString() || '',
+                    sellingPrice: loadedBatch.sellingPrice?.toString() || '',
+                    reorderLevel: loadedBatch.reorderLevel?.toString() || '',
+                    imageFile: null,
+                    imagePreview: response?.data?.imageUrl ? resolveApiImageUrl(response.data.imageUrl, response.data.imageUrl) : '',
+                }));
+            } catch (error) {
+                setErrorMsg(error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Failed to load batch details.');
+            } finally {
+                setIsLoadingBatch(false);
+            }
+        };
+
+        loadBatch();
+    }, [batchId, isEditMode]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -89,11 +135,16 @@ const InventoryBatchCreatePage = () => {
         };
 
         try {
-            await inventoryAddBatch(payload, formData.imageFile);
-            setSuccessMsg('Batch created successfully.');
+            if (isEditMode) {
+                await inventoryEditBatch(batchId, payload, formData.imageFile);
+                setSuccessMsg('Batch updated successfully.');
+            } else {
+                await inventoryAddBatch(payload, formData.imageFile);
+                setSuccessMsg('Batch created successfully.');
+            }
             setFormData(initialFormState);
         } catch (error) {
-            setErrorMsg(error?.response?.data?.error || error?.response?.data?.message || 'Failed to create batch.');
+            setErrorMsg(error?.response?.data?.error || error?.response?.data?.message || (isEditMode ? 'Failed to update batch.' : 'Failed to create batch.'));
         } finally {
             setIsSubmitting(false);
         }
@@ -115,10 +166,14 @@ const InventoryBatchCreatePage = () => {
                             <PackagePlus className="w-5 h-5" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Create Inventory Batch</h1>
-                            <p className="text-sm text-gray-500">Enter batch details and submit them to the inventory batch API.</p>
+                            <h1 className="text-2xl font-bold text-gray-900">{isEditMode ? 'Edit Inventory Batch' : 'Create Inventory Batch'}</h1>
+                            <p className="text-sm text-gray-500">{isEditMode ? 'Edit existing batch details and save changes.' : 'Enter batch details and submit them to the inventory batch API.'}</p>
                         </div>
                     </div>
+
+                    {isLoadingBatch && (
+                        <div className="px-6 pt-4 text-sm text-gray-500">Loading batch details...</div>
+                    )}
 
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -128,11 +183,11 @@ const InventoryBatchCreatePage = () => {
                                     name="imageFile"
                                     type="file"
                                     accept="image/*"
-                                    required
+                                    required={!isEditMode}
                                     onChange={handleChange}
                                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                                 />
-                                <p className="mt-2 text-xs text-gray-500">Choose an image from the device. The form is sent as multipart/form-data.</p>
+                                <p className="mt-2 text-xs text-gray-500">Choose an image from the device. {isEditMode ? 'Leave empty to keep current image.' : 'The form is sent as multipart/form-data.'}</p>
                             </label>
 
                             <label className="block">
@@ -313,7 +368,7 @@ const InventoryBatchCreatePage = () => {
                                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 disabled:opacity-60 transition"
                                 >
                                     <Save className="w-4 h-4" />
-                                    {isSubmitting ? 'Saving...' : 'Save Batch'}
+                                    {isSubmitting ? 'Saving...' : isEditMode ? 'Update Batch' : 'Save Batch'}
                                 </button>
                             </div>
                         </div>

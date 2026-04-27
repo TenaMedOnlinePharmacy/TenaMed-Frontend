@@ -161,9 +161,9 @@ export const inventoryEditBatch = (batchId, payload, file) => {
         formData.append('image', file);
     }
 
-    return apiFormData.put(`/inventory/batch/${batchId}`, formData, buildAuthHeaders());
+    return apiFormData.put(`/inventory/batch/edit/${batchId}`, formData, buildAuthHeaders());
 };
-export const inventoryDeleteBatch = (batchId) => api.delete(`/inventory/batch/${batchId}`, buildAuthHeaders());
+export const inventoryDeleteBatch = (batchId) => api.delete(`/inventory/batch/delete/${batchId}`, buildAuthHeaders());
 export const inventoryGet = (params) => api.get('/inventory', withAuthHeaders({ params }));
 export const inventoryCheckAvailability = (params) => api.get('/inventory/check', withAuthHeaders({ params }));
 export const inventoryReserve = (payload) => api.post('/inventory/reserve', payload, buildAuthHeaders());

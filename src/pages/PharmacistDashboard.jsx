@@ -3,8 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
 import {
     inventoryDeleteBatch,
-    inventoryEditBatch,
-    inventoryGetBatchForEdit,
     inventoryList,
     orderAccept,
     orderReject,
@@ -220,44 +218,7 @@ const PharmacistDashboard = () => {
             return;
         }
 
-        updateBatchActionLoading(batchId, true);
-        setInventoryErrorMsg('');
-        try {
-            const detailsResponse = await inventoryGetBatchForEdit(batchId);
-            const existingBatch = detailsResponse?.data?.batch;
-            if (!existingBatch) {
-                throw new Error('Batch details are missing.');
-            }
-
-            const nextUnitPriceRaw = window.prompt('Enter unit price', existingBatch.unitCost ?? '');
-            if (nextUnitPriceRaw === null) {
-                return;
-            }
-            const nextSellingPriceRaw = window.prompt('Enter selling price', existingBatch.sellingPrice ?? '');
-            if (nextSellingPriceRaw === null) {
-                return;
-            }
-
-            const nextUnitPrice = Number(nextUnitPriceRaw);
-            const nextSellingPrice = Number(nextSellingPriceRaw);
-            if (Number.isNaN(nextUnitPrice) || Number.isNaN(nextSellingPrice)) {
-                setInventoryErrorMsg('Unit price and selling price must be valid numbers.');
-                return;
-            }
-
-            const payload = {
-                ...existingBatch,
-                unitCost: nextUnitPrice,
-                sellingPrice: nextSellingPrice,
-            };
-
-            await inventoryEditBatch(batchId, payload, null);
-            await loadInventory();
-        } catch (error) {
-            setInventoryErrorMsg(error?.response?.data?.error || error?.message || 'Failed to edit batch.');
-        } finally {
-            updateBatchActionLoading(batchId, false);
-        }
+        navigate(`/pharmacist/inventory/batch/new?batchId=${batchId}`);
     };
 
     const handleAcceptOrder = async (orderId) => {
