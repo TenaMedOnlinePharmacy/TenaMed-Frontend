@@ -35,13 +35,14 @@ const buildMetadataKey = (medicineName, pharmacyName) => {
     return `${medicine}::${pharmacy}`;
 };
 
-const mapServerCartToUi = (serverCart, metadataByMedicineId = {}) => {
+const mapServerCartToUi = (serverCart, metadataByProductId = {}) => {
     const items = Array.isArray(serverCart?.items) ? serverCart.items : [];
 
     return items.map((item) => {
-        const medicineId = item?.medicineId;
-        const metadataById = medicineId ? metadataByMedicineId[medicineId] : null;
-        const metadataByName = metadataByMedicineId[buildMetadataKey(item?.medicineName, item?.pharmacyName)] || null;
+        const productId = item?.productId || null;
+        const serverName = item?.brandName || item?.medicineName || '';
+        const metadataById = productId ? metadataByProductId[productId] : null;
+        const metadataByName = metadataByProductId[buildMetadataKey(serverName, item?.pharmacyName)] || null;
         const metadata = metadataById || metadataByName;
         const unitPrice = Number(item?.unitPrice || 0);
         const totalPrice = Number(item?.totalPrice || 0);
@@ -51,13 +52,14 @@ const mapServerCartToUi = (serverCart, metadataByMedicineId = {}) => {
         const effectiveUnitPrice = hasUnitPrice ? unitPrice : (hasTotalPrice ? totalPrice / quantity : 0);
 
         return {
-            id: item?.id || medicineId,
+            id: item?.id || productId || serverName,
             cartItemId: item?.id,
-            medicineId,
+            productId,
             pharmacyId: item?.pharmacyId,
+            prescriptionId: item?.prescriptionId || null,
             quantity,
             price: effectiveUnitPrice,
-            name: item?.medicineName || metadata?.name || `Medicine ${String(medicineId || '').slice(0, 8)}`,
+            name: serverName || metadata?.name || 'Medicine',
             category: metadata?.category || 'General',
             pharmacy: item?.pharmacyName || metadata?.pharmacy || 'TenaMED Partner Pharmacy',
             image: metadata?.image || FALLBACK_IMAGE,
@@ -67,18 +69,18 @@ const mapServerCartToUi = (serverCart, metadataByMedicineId = {}) => {
 };
 
 const toMetadata = (product) => {
-    const medicineId = product?.medicineId || product?.id || null;
+    const productId = product?.productId || product?.medicineId || null;
     const medicineName = product?.name || product?.medicineName || '';
     const pharmacyName = product?.pharmacy || product?.pharmacyName || '';
     const metadataKey = buildMetadataKey(medicineName, pharmacyName);
 
-    if (!medicineId && !metadataKey) {
+    if (!productId && !metadataKey) {
         return null;
     }
 
     return {
         key: metadataKey,
-        medicineId,
+        productId,
         name: medicineName,
         category: product?.category,
         pharmacy: pharmacyName,
@@ -87,11 +89,10 @@ const toMetadata = (product) => {
 };
 
 const buildCartAddPayload = (product, quantity) => ({
-    medicineId: product?.medicineId || product?.id,
-    pharmacyId: product?.pharmacyId,
-    medicineName: product?.name || product?.medicineName || '',
-    pharmacyName: product?.pharmacy || product?.pharmacyName || '',
+    productId: product?.productId || product?.medicineId,
+    pharmacyName: product?.pharmacyName || product?.pharmacy || '',
     quantity: Number(quantity) > 0 ? Number(quantity) : 1,
+    prescriptionId: product?.prescriptionId || product?.prescription?.id || null,
 });
 
 export const useCart = () => {
@@ -133,7 +134,7 @@ export const CartProvider = ({ children }) => {
         if (metadata) {
             setCartMetadata((prev) => ({
                 ...prev,
-                ...(metadata.medicineId ? { [metadata.medicineId]: metadata } : {}),
+                ...(metadata.productId ? { [metadata.productId]: metadata } : {}),
                 ...(metadata.key ? { [metadata.key]: metadata } : {}),
             }));
         }
@@ -142,7 +143,7 @@ export const CartProvider = ({ children }) => {
             .then((response) => {
                 const mapped = mapServerCartToUi(response?.data, {
                     ...cartMetadata,
-                    ...(metadata ? { [metadata.medicineId]: metadata } : {}),
+                    ...(metadata?.productId ? { [metadata.productId]: metadata } : {}),
                 });
                 setCartItems(mapped);
             })

@@ -11,6 +11,7 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import PharmacistDashboard from './pages/PharmacistDashboard';
+import InventoryBatchCreatePage from './pages/InventoryBatchCreatePage';
 import AdminDashboard from './pages/AdminDashboard';
 import UploadPrescriptionPage from './pages/UploadPrescriptionPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -94,6 +95,10 @@ function App() {
           <Route
             path="pharmacist/prescription-review"
             element={<ProtectedRoute roles={['pharmacy', 'pharmacist']}><PrescriptionReviewPage /></ProtectedRoute>}
+          />
+          <Route
+            path="pharmacist/inventory/batch/new"
+            element={<ProtectedRoute roles={['pharmacy', 'pharmacist']}><InventoryBatchCreatePage /></ProtectedRoute>}
           />
 
           <Route path="hospital/register" element={<HospitalRegistrationPage />} />

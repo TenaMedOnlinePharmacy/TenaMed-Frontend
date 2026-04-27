@@ -129,7 +129,22 @@ export const medicineRemoveDopingRule = (medicineId, ruleId) => api.delete(`/med
 
 // Inventory
 export const inventoryCreate = (payload) => api.post('/inventory', payload, buildAuthHeaders());
-export const inventoryAddBatch = (payload) => api.post('/inventory/batch', payload, buildAuthHeaders());
+export const inventoryAddBatch = (payload, file) => {
+    const formData = new FormData();
+
+    if (file) {
+        formData.append('image', file);
+    }
+
+    formData.append(
+        'batch',
+        new Blob([JSON.stringify(payload)], {
+            type: 'application/json',
+        }),
+    );
+
+    return apiFormData.post('/inventory/batch', formData, buildAuthHeaders());
+};
 export const inventoryGet = (params) => api.get('/inventory', withAuthHeaders({ params }));
 export const inventoryCheckAvailability = (params) => api.get('/inventory/check', withAuthHeaders({ params }));
 export const inventoryReserve = (payload) => api.post('/inventory/reserve', payload, buildAuthHeaders());

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
 import { products } from '../data/mockProducts';
 import { orderAccept, orderReject, pharmacyGetIncomingOrders, pharmacyInvitePharmacist, pharmacyListStaff, pharmacyVerifyStaff } from '../api/axios';
@@ -9,6 +9,7 @@ import { resolveApiImageUrl } from '../utils/imageUrl';
 const PharmacistDashboard = () => {
     const { userRole } = useAuth();
     const isPharmacyOwner = userRole === 'pharmacy';
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const requestedTab = searchParams.get('tab');
 
@@ -408,7 +409,11 @@ const PharmacistDashboard = () => {
                             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                                 <Package className="text-emerald-600" /> Inventory Management
                             </h2>
-                            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/pharmacist/inventory/batch/new')}
+                                className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2"
+                            >
                                 <Plus className="w-4 h-4" /> Add Item
                             </button>
                         </div>

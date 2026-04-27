@@ -23,10 +23,12 @@ const getMedicineImageValue = (medicine) => (
 
 const mapMedicineToProduct = (medicine) => {
     const price = Number(medicine?.price ?? medicine?.doseValue ?? 0);
+    const productId = medicine?.productId || medicine?.medicineId || medicine?.id || null;
 
     return {
-        id: medicine?.id || medicine?.medicineId || medicine?.medicineName || 'medicine',
-        medicineId: medicine?.medicineId || medicine?.id || null,
+        id: productId || medicine?.medicineName || 'medicine',
+        productId,
+        medicineId: medicine?.medicineId || medicine?.productId || medicine?.id || null,
         pharmacyId: medicine?.pharmacyId || null,
         name: medicine?.medicineName || medicine?.name || 'Unnamed medicine',
         category: medicine?.medicineCategory || medicine?.category || 'General',

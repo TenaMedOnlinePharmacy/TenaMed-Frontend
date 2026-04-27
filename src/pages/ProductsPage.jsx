@@ -26,16 +26,17 @@ const mapMedicineToProduct = (medicine, index) => {
     const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
     const pharmacyName = medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy';
     const category = medicine?.medicineCategory || medicine?.category || 'General';
-    const medicineId = medicine?.medicineId || medicine?.id;
-    const id = medicineId || `${medicineName}-${pharmacyName}-${index}`;
-    const routeId = medicineId || `name-${encodeURIComponent(medicineName)}-${index}`;
+    const productId = medicine?.productId || medicine?.medicineId || medicine?.id;
+    const id = productId || `${medicineName}-${pharmacyName}-${index}`;
+    const routeId = productId || `name-${encodeURIComponent(medicineName)}-${index}`;
     const hasStockInfo = typeof medicine?.availableQuantity === 'number';
     const inStock = hasStockInfo ? medicine.availableQuantity > 0 : true;
 
     return {
         id,
         routeId,
-        medicineId,
+        productId,
+        medicineId: medicine?.medicineId || medicine?.productId || medicine?.id,
         pharmacyId: medicine?.pharmacyId,
         name: medicineName,
         category,
