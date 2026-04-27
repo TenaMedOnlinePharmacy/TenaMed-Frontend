@@ -20,6 +20,7 @@ import PrescriptionReviewPage from './pages/PrescriptionReviewPage';
 import HospitalRegistrationPage from './pages/HospitalRegistrationPage';
 import HospitalDashboardPage from './pages/HospitalDashboardPage';
 import DoctorLoginPage from './pages/DoctorLoginPage';
+import DoctorInviteRegisterPage from './pages/DoctorInviteRegisterPage';
 import EPrescriptionPage from './pages/EPrescriptionPage';
 import MedicalVerificationDashboardPage from './pages/MedicalVerificationDashboardPage';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -108,6 +109,8 @@ function App() {
           />
 
           <Route path="doctor/login" element={<DoctorLoginPage />} />
+          <Route path="register/doctor" element={<DoctorInviteRegisterPage />} />
+          <Route path="register/doctor/:token" element={<DoctorInviteRegisterPage />} />
           <Route
             path="doctor/prescriptions/new"
             element={<ProtectedRoute roles={['doctor']}><EPrescriptionPage /></ProtectedRoute>}

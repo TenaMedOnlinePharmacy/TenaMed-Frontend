@@ -197,7 +197,12 @@ export const hospitalGetById = (id) => api.get(`/hospitals/${id}`, buildAuthHead
 export const hospitalUpdate = (id, payload) => api.put(`/hospitals/${id}`, payload, buildAuthHeaders());
 export const hospitalVerify = (id) => api.patch(`/hospitals/${id}/verify`, null, buildAuthHeaders());
 export const hospitalGetDoctors = (id) => api.get(`/hospitals/${id}/doctors`, buildAuthHeaders());
-export const hospitalInviteDoctor = (id, payload) => api.post(`/hospitals/${id}/invite-doctor`, payload, buildAuthHeaders());
+export const hospitalInviteDoctor = (idOrPayload, maybePayload) => {
+    if (typeof idOrPayload === 'object' && idOrPayload !== null) {
+        return api.post('/hospitals/invite-doctor', idOrPayload, buildAuthHeaders());
+    }
+    return api.post(`/hospitals/${idOrPayload}/invite-doctor`, maybePayload, buildAuthHeaders());
+};
 
 // Doctors
 export const doctorCreateFromInvite = (token, payload) => api.post('/doctors/create', payload, withAuthHeaders({ params: { token } }));

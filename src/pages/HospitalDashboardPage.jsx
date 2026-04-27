@@ -1,37 +1,92 @@
-import React, { useMemo, useState } from 'react';
-import { Trash2, UserPlus } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { CheckCircle, UserPlus, XCircle } from 'lucide-react';
+import { doctorVerify, hospitalGetDoctors, hospitalInviteDoctor } from '../api/axios';
 
-const initialDoctors = [
-    { id: 'DOC-201', name: 'Dr. Liya A.', specialty: 'Cardiology', status: 'Verified' },
-    { id: 'DOC-202', name: 'Dr. Aman B.', specialty: 'Pediatrics', status: 'Pending' },
-];
+const HOSPITAL_ID_STORAGE_KEY = 'tenamed_hospital_id';
 
 const HospitalDashboardPage = () => {
-    const [doctors, setDoctors] = useState(initialDoctors);
-    const [draft, setDraft] = useState({ name: '', specialty: '' });
+    const [hospitalId, setHospitalId] = useState(() => localStorage.getItem(HOSPITAL_ID_STORAGE_KEY) || '');
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteStatusMsg, setInviteStatusMsg] = useState('');
+    const [inviteErrorMsg, setInviteErrorMsg] = useState('');
+    const [isInviting, setIsInviting] = useState(false);
+    const [doctors, setDoctors] = useState([]);
+    const [isLoadingDoctors, setIsLoadingDoctors] = useState(false);
+    const [doctorsErrorMsg, setDoctorsErrorMsg] = useState('');
+    const [actionLoadingByDoctorId, setActionLoadingByDoctorId] = useState({});
 
-    const verifiedCount = useMemo(() => doctors.filter((d) => d.status === 'Verified').length, [doctors]);
-
-    const addDoctor = (event) => {
-        event.preventDefault();
-        if (!draft.name || !draft.specialty) {
+    const loadDoctors = async () => {
+        if (!hospitalId.trim()) {
+            setDoctors([]);
             return;
         }
 
-        setDoctors((prev) => [
-            {
-                id: `DOC-${Math.floor(Math.random() * 900 + 100)}`,
-                name: draft.name,
-                specialty: draft.specialty,
-                status: 'Pending',
-            },
-            ...prev,
-        ]);
-        setDraft({ name: '', specialty: '' });
+        setIsLoadingDoctors(true);
+        setDoctorsErrorMsg('');
+        try {
+            const response = await hospitalGetDoctors(hospitalId.trim());
+            setDoctors(Array.isArray(response?.data) ? response.data : []);
+        } catch (error) {
+            setDoctorsErrorMsg(error?.response?.data?.error || error?.response?.data?.message || 'Failed to load doctors list.');
+        } finally {
+            setIsLoadingDoctors(false);
+        }
     };
 
-    const removeDoctor = (id) => {
-        setDoctors((prev) => prev.filter((doc) => doc.id !== id));
+    useEffect(() => {
+        loadDoctors();
+    }, [hospitalId]);
+
+    const pendingDoctors = useMemo(() => doctors.filter((doctor) => doctor?.status === 'PENDING'), [doctors]);
+    const verifiedDoctors = useMemo(() => doctors.filter((doctor) => doctor?.status === 'ACTIVE'), [doctors]);
+    const verifiedCount = verifiedDoctors.length;
+
+    const updateActionLoading = (doctorId, value) => {
+        setActionLoadingByDoctorId((prev) => ({
+            ...prev,
+            [doctorId]: value,
+        }));
+    };
+
+    const handleInviteDoctor = async (event) => {
+        event.preventDefault();
+        setInviteStatusMsg('');
+        setInviteErrorMsg('');
+
+        if (!inviteEmail.trim()) {
+            setInviteErrorMsg('Enter doctor email address.');
+            return;
+        }
+
+        setIsInviting(true);
+        try {
+            await hospitalInviteDoctor({ email: inviteEmail.trim() });
+            setInviteEmail('');
+            setInviteStatusMsg('Doctor invitation sent successfully.');
+            await loadDoctors();
+        } catch (error) {
+            setInviteErrorMsg(error?.response?.data?.error || error?.response?.data?.message || 'Failed to send invitation.');
+        } finally {
+            setIsInviting(false);
+        }
+    };
+
+    const handleVerifyDoctor = async (doctorId) => {
+        if (!doctorId) {
+            setDoctorsErrorMsg('Missing doctor id for verification.');
+            return;
+        }
+
+        updateActionLoading(doctorId, true);
+        setDoctorsErrorMsg('');
+        try {
+            await doctorVerify(doctorId);
+            await loadDoctors();
+        } catch (error) {
+            setDoctorsErrorMsg(error?.response?.data?.error || error?.response?.data?.message || 'Failed to verify doctor.');
+        } finally {
+            updateActionLoading(doctorId, false);
+        }
     };
 
     return (
@@ -53,47 +108,95 @@ const HospitalDashboardPage = () => {
                     </div>
                     <div className="bg-white rounded-xl border border-gray-100 p-4">
                         <p className="text-sm text-gray-500">Pending Review</p>
-                        <p className="text-2xl font-bold text-amber-600">{doctors.length - verifiedCount}</p>
+                        <p className="text-2xl font-bold text-amber-600">{pendingDoctors.length}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <form onSubmit={addDoctor} className="bg-white rounded-xl border border-gray-100 p-5 space-y-3 h-max">
-                        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><UserPlus className="w-4 h-4 text-emerald-600" /> Add Doctor</h2>
-                        <input value={draft.name} onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))} placeholder="Doctor full name" className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                        <input value={draft.specialty} onChange={(e) => setDraft((d) => ({ ...d, specialty: e.target.value }))} placeholder="Specialty" className="w-full p-2.5 border border-gray-300 rounded-lg" />
-                        <button className="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-700">Add to Roster</button>
+                    <form onSubmit={handleInviteDoctor} className="bg-white rounded-xl border border-gray-100 p-5 space-y-3 h-max">
+                        <h2 className="font-semibold text-gray-900 flex items-center gap-2"><UserPlus className="w-4 h-4 text-emerald-600" /> Invite Doctor</h2>
+                        <input
+                            type="email"
+                            value={inviteEmail}
+                            onChange={(e) => setInviteEmail(e.target.value)}
+                            placeholder="doctor@example.com"
+                            className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        />
+                        <button
+                            type="submit"
+                            disabled={isInviting}
+                            className="w-full bg-emerald-600 text-white py-2.5 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                            {isInviting ? 'Sending...' : 'Send Invitation'}
+                        </button>
+                        {inviteStatusMsg && <p className="text-sm text-emerald-700">{inviteStatusMsg}</p>}
+                        {inviteErrorMsg && <p className="text-sm text-red-600">{inviteErrorMsg}</p>}
                     </form>
 
-                    <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-500 text-sm">
-                                <tr>
-                                    <th className="p-4 font-medium">ID</th>
-                                    <th className="p-4 font-medium">Name</th>
-                                    <th className="p-4 font-medium">Specialty</th>
-                                    <th className="p-4 font-medium">Status</th>
-                                    <th className="p-4 font-medium">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {doctors.map((doc) => (
-                                    <tr key={doc.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-medium text-emerald-600">{doc.id}</td>
-                                        <td className="p-4 text-gray-800">{doc.name}</td>
-                                        <td className="p-4 text-gray-600">{doc.specialty}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 text-xs rounded-full font-semibold ${doc.status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                                                {doc.status}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <button onClick={() => removeDoctor(doc.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="lg:col-span-2 space-y-6">
+                        <div className="bg-white rounded-xl border border-gray-100 p-5">
+                            <h2 className="text-base font-semibold text-gray-900 mb-3">Pending Doctors</h2>
+                            {isLoadingDoctors ? (
+                                <p className="text-sm text-gray-500">Loading pending doctors...</p>
+                            ) : pendingDoctors.length === 0 ? (
+                                <p className="text-sm text-gray-500">No pending doctors found.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {pendingDoctors.map((doctor) => {
+                                        const isActionLoading = Boolean(actionLoadingByDoctorId[doctor?.id]);
+                                        return (
+                                            <div key={doctor?.id} className="border border-gray-100 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">Doctor ID: {doctor?.id}</p>
+                                                    <p className="text-xs text-gray-500">Specialization: {doctor?.specialization || 'N/A'} | Status: {doctor?.status || 'PENDING'}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleVerifyDoctor(doctor?.id)}
+                                                        disabled={isActionLoading}
+                                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 disabled:opacity-60"
+                                                    >
+                                                        <CheckCircle className="w-4 h-4" /> Verify
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled
+                                                        title="Reject endpoint is not available in current backend API"
+                                                        className="inline-flex items-center gap-1 px-3 py-2 rounded-md text-sm font-medium text-gray-500 bg-gray-100 cursor-not-allowed"
+                                                    >
+                                                        <XCircle className="w-4 h-4" /> Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bg-white rounded-xl border border-gray-100 p-5">
+                            <h2 className="text-base font-semibold text-gray-900 mb-3">Verified Doctors</h2>
+                            {isLoadingDoctors ? (
+                                <p className="text-sm text-gray-500">Loading verified doctors...</p>
+                            ) : verifiedDoctors.length === 0 ? (
+                                <p className="text-sm text-gray-500">No verified doctors found.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {verifiedDoctors.map((doctor) => (
+                                        <div key={doctor?.id} className="border border-gray-100 rounded-lg p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900">Doctor ID: {doctor?.id}</p>
+                                                <p className="text-xs text-gray-500">Specialization: {doctor?.specialization || 'N/A'} | Status: {doctor?.status || 'ACTIVE'}</p>
+                                            </div>
+                                            <div className="text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">Active</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {doctorsErrorMsg && <p className="text-sm text-red-600">{doctorsErrorMsg}</p>}
                     </div>
                 </div>
             </div>
