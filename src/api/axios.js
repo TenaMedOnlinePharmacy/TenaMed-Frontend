@@ -89,6 +89,8 @@ export const authLogin = (payload) => api.post('/auth/login', payload, buildAuth
 export const authRefresh = () => api.post('/auth/refresh', null, buildAuthHeaders());
 export const authLogout = () => api.post('/auth/logout', null, buildAuthHeaders());
 export const authLogoutAll = () => api.post('/auth/logout-all', null, buildAuthHeaders());
+export const authSendOtp = (payload) => api.post('/auth/otp/send', payload, buildAuthHeaders());
+export const authVerifyOtp = (payload) => api.post('/auth/otp/verify', payload, buildAuthHeaders());
 
 // Identity
 export const identityRegister = (payload) => api.post('/identity/register', payload, buildAuthHeaders());

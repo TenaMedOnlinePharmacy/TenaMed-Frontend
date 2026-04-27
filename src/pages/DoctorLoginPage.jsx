@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
+import { authLogin, authSendOtp, authVerifyOtp } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+
+const OTP_TYPE = 'doctor_login';
 
 const DoctorLoginPage = () => {
     const [email, setEmail] = useState('');
@@ -9,27 +12,114 @@ const DoctorLoginPage = () => {
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState(1);
     const [error, setError] = useState('');
+    const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+    const [verifiedEmail, setVerifiedEmail] = useState('');
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const submitCredentials = (event) => {
+    const handleEmailChange = (event) => {
+        const nextEmail = event.target.value;
+        setEmail(nextEmail);
+        if (otpVerified && verifiedEmail && nextEmail.trim().toLowerCase() !== verifiedEmail.toLowerCase()) {
+            setOtpVerified(false);
+            setVerifiedEmail('');
+        }
+    };
+
+    const submitCredentials = async (event) => {
         event.preventDefault();
         if (!email || !password) {
             setError('Email and password are required.');
             return;
         }
         setError('');
-        setStep(2);
-    };
 
-    const submitOtp = (event) => {
-        event.preventDefault();
-        if (otp.length < 4) {
-            setError('Enter a valid OTP code.');
+        if (otpVerified && verifiedEmail && verifiedEmail.toLowerCase() === email.trim().toLowerCase()) {
+            setIsVerifyingOtp(true);
+            try {
+                const loginResponse = await authLogin({
+                    email: email.trim(),
+                    password,
+                });
+                const accessToken = loginResponse?.data?.accessToken;
+                if (!accessToken) {
+                    throw new Error('Missing access token in login response.');
+                }
+                login(accessToken, email.trim(), 'doctor');
+                navigate('/doctor/prescriptions/new');
+            } catch (err) {
+                const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Login failed.';
+                setError(message);
+            } finally {
+                setIsVerifyingOtp(false);
+            }
             return;
         }
-        login('mock-doctor-token', email, 'doctor');
-        navigate('/doctor/prescriptions/new');
+
+        setIsSendingOtp(true);
+        try {
+            await authSendOtp({
+                email: email.trim(),
+                type: OTP_TYPE,
+            });
+            setStep(2);
+        } catch (err) {
+            const message = err?.response?.data?.message || err?.response?.data?.error || 'Failed to send OTP. Please try again.';
+            setError(message);
+        } finally {
+            setIsSendingOtp(false);
+        }
+    };
+
+    const submitOtp = async (event) => {
+        event.preventDefault();
+        if (otp.trim().length !== 6) {
+            setError('Enter a valid 6-digit OTP code.');
+            return;
+        }
+
+        setError('');
+        setIsVerifyingOtp(true);
+        try {
+            await authVerifyOtp({
+                email: email.trim(),
+                type: OTP_TYPE,
+                otp: otp.trim(),
+            });
+
+            setOtpVerified(true);
+            setVerifiedEmail(email.trim());
+
+            const loginResponse = await authLogin({
+                email: email.trim(),
+                password,
+            });
+            const accessToken = loginResponse?.data?.accessToken;
+            if (!accessToken) {
+                throw new Error('Missing access token in login response.');
+            }
+
+            login(accessToken, email.trim(), 'doctor');
+            navigate('/doctor/prescriptions/new');
+        } catch (err) {
+            const status = err?.response?.status;
+            const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'OTP verification failed.';
+            const normalized = message.toLowerCase();
+            const isCredentialError = status === 401 || status === 403 || normalized.includes('invalid') || normalized.includes('credential');
+
+            if (isCredentialError) {
+                setError('Email or password is incorrect. Please enter your credentials again.');
+                setStep(1);
+                setOtp('');
+                setPassword('');
+            } else {
+                setError(message);
+            }
+        } finally {
+            setIsVerifyingOtp(false);
+        }
     };
 
     return (
@@ -45,14 +135,24 @@ const DoctorLoginPage = () => {
 
                 {step === 1 ? (
                     <form onSubmit={submitCredentials} className="space-y-4">
-                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="doctor@hospital.org" className="w-full p-3 border border-gray-300 rounded-lg" required />
+                        <input type="email" value={email} onChange={handleEmailChange} placeholder="doctor@hospital.org" className="w-full p-3 border border-gray-300 rounded-lg" required />
                         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border border-gray-300 rounded-lg" required />
-                        <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700">Continue to OTP</button>
+                        <button
+                            disabled={isSendingOtp}
+                            className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                            {isSendingOtp ? 'Sending OTP...' : 'Continue to OTP'}
+                        </button>
                     </form>
                 ) : (
                     <form onSubmit={submitOtp} className="space-y-4">
-                        <input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="One-time passcode" className="w-full p-3 border border-gray-300 rounded-lg" required />
-                        <button className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700">Verify and Sign In</button>
+                        <input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" className="w-full p-3 border border-gray-300 rounded-lg" required />
+                        <button
+                            disabled={isVerifyingOtp}
+                            className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                            {isVerifyingOtp ? 'Verifying...' : 'Verify and Sign In'}
+                        </button>
                     </form>
                 )}
 
