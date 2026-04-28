@@ -122,6 +122,10 @@ export const medicineCreate = (payload) => api.post('/medicines', payload, build
 export const medicineGetAll = () => api.get('/medicines', buildAuthHeaders());
 export const medicineGetById = (id) => api.get(`/medicines/${id}`, buildAuthHeaders());
 export const medicineSearch = (params = {}) => api.get('/medicines/search', withAuthHeaders({ params: sanitizeParams(params) }));
+export const medicineSearchByNameCategory = (keyword) => api.get(
+    '/medicines/search/name-category',
+    withAuthHeaders({ params: sanitizeParams({ keyword }) }),
+);
 export const medicineUpdate = (id, payload) => api.put(`/medicines/${id}`, payload, buildAuthHeaders());
 export const medicineDelete = (id) => api.delete(`/medicines/${id}`, buildAuthHeaders());
 export const medicineAddAllergen = (medicineId, allergenId) => api.post(`/medicines/${medicineId}/allergens/${allergenId}`, null, buildAuthHeaders());
@@ -236,6 +240,8 @@ export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pha
 export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildAuthHeaders());
 export const patientGetProfile = () => api.get('/patient/profile', buildAuthHeaders());
 export const patientUpdateProfile = (payload) => api.put('/patient/profile', payload, buildAuthHeaders());
+export const patientGenerateUniqueCode = () => api.post('/patient/generate-unique-code', null, buildAuthHeaders());
+export const patientCreatePrescription = (payload) => api.post('/doctors/prescriptions', payload, buildAuthHeaders());
 export const patientConvertTemporary = (patientId) => api.post(`/patient/convert/${patientId}`, null, buildAuthHeaders());
 export const patientCreateTemporary = (payload) => api.post('/patient/temporary', payload, buildAuthHeaders());
 export const patientDeleteTemporary = (patientId) => api.delete(`/patient/temporary/${patientId}`, buildAuthHeaders());
