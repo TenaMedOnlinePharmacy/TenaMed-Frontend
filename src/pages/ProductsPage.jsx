@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Filter, ShoppingCart } from 'lucide-react';
 import { medicineGetAll, medicineSearch } from '../api/axios';
 import { useCart } from '../context/CartContext';
@@ -52,16 +52,52 @@ const mapMedicineToProduct = (medicine, index) => {
     };
 };
 
+const mapMatchedPrescriptionToProduct = (medicine, index, prescriptionId) => {
+    const mapped = mapMedicineToProduct(medicine, index);
+    return {
+        ...mapped,
+        prescriptionRequired: false,
+        prescriptionId: medicine?.prescriptionId || prescriptionId || null,
+    };
+};
+
 const ProductsPage = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState('');
+    const [usePrescriptionMatches, setUsePrescriptionMatches] = useState(false);
+    const location = useLocation();
     const { addToCart } = useCart();
+
+    const prescriptionMatches = Array.isArray(location.state?.prescriptionMatches)
+        ? location.state.prescriptionMatches
+        : null;
+    const prescriptionId = location.state?.prescriptionId || null;
+
+    useEffect(() => {
+        if (prescriptionMatches) {
+            setUsePrescriptionMatches(true);
+        }
+    }, [prescriptionMatches]);
 
     useEffect(() => {
         let isMounted = true;
+
+        if (usePrescriptionMatches && prescriptionMatches) {
+            const mappedMatches = prescriptionMatches.map((row, index) => (
+                mapMatchedPrescriptionToProduct(row, index, prescriptionId)
+            ));
+
+            setProducts(mappedMatches);
+            setIsLoading(false);
+            setErrorMsg('');
+
+            return () => {
+                isMounted = false;
+            };
+        }
 
         const loadMedicines = async () => {
             setIsLoading(true);
@@ -99,7 +135,13 @@ const ProductsPage = () => {
         return () => {
             isMounted = false;
         };
-    }, [searchQuery, selectedCategory]);
+    }, [searchQuery, selectedCategory, usePrescriptionMatches, prescriptionMatches, prescriptionId]);
+
+    const handleBrowseAll = () => {
+        setUsePrescriptionMatches(false);
+        setSelectedCategory('All');
+        setSearchQuery('');
+    };
 
     const categories = useMemo(() => {
         const dynamicCategories = products
@@ -114,6 +156,8 @@ const ProductsPage = () => {
             product.pharmacy.toLowerCase().includes(searchQuery.toLowerCase());
         return matchesCategory && matchesSearch;
     });
+
+    const isPrescriptionList = Boolean(usePrescriptionMatches && prescriptionMatches);
 
     return (
         <div className="bg-gray-50 min-h-screen py-8">
@@ -138,6 +182,21 @@ const ProductsPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {isPrescriptionList && (
+                    <div className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <span className="font-semibold">Prescription verified.</span> Showing matched medicines from your upload.
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleBrowseAll}
+                            className="px-4 py-2 rounded-lg bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition"
+                        >
+                            Browse all medicines
+                        </button>
+                    </div>
+                )}
 
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Sidebar Filters */}
@@ -179,7 +238,15 @@ const ProductsPage = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {filteredProducts.map((product) => (
                                     <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
-                                        <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block h-48 overflow-hidden relative bg-gray-100">
+                                        <Link
+                                            to={`/products/${product.routeId || product.id}`}
+                                            state={{
+                                                product,
+                                                prescriptionOverride: isPrescriptionList ? false : undefined,
+                                                prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
+                                            }}
+                                            className="block h-48 overflow-hidden relative bg-gray-100"
+                                        >
                                             <img
                                                 src={product.image}
                                                 alt={product.name}
@@ -203,7 +270,15 @@ const ProductsPage = () => {
                                                     </span>
                                                 )}
                                             </div>
-                                            <Link to={`/products/${product.routeId || product.id}`} state={{ product }} className="block">
+                                            <Link
+                                                to={`/products/${product.routeId || product.id}`}
+                                                state={{
+                                                    product,
+                                                    prescriptionOverride: isPrescriptionList ? false : undefined,
+                                                    prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
+                                                }}
+                                                className="block"
+                                            >
                                                 <h3 className="font-bold text-gray-900 mb-1 hover:text-emerald-600 transition">{product.name}</h3>
                                             </Link>
                                             <p className="text-sm text-gray-500 mb-3">Sold by: {product.pharmacy}</p>
@@ -246,13 +321,27 @@ const ProductsPage = () => {
                                     <Search className="w-8 h-8 text-gray-400" />
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900">No medicines found</h3>
-                                <p className="text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
-                                <button
-                                    onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
-                                    className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
-                                >
-                                    Clear all filters
-                                </button>
+                                {isPrescriptionList ? (
+                                    <>
+                                        <p className="text-gray-500">No matches were found for your prescription.</p>
+                                        <button
+                                            onClick={handleBrowseAll}
+                                            className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
+                                        >
+                                            Browse all medicines
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
+                                        <button
+                                            onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
+                                            className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
+                                        >
+                                            Clear all filters
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>

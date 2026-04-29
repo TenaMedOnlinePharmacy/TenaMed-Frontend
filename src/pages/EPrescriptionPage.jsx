@@ -416,7 +416,7 @@ const EPrescriptionPage = () => {
                                     <tr className="border-b border-gray-100 text-sm text-gray-500">
                                         <th className="py-3 px-4 font-medium">Patient Name</th>
                                         <th className="py-3 px-4 font-medium">Unique Code</th>
-                                        <th className="py-3 px-4 font-medium">Date</th>
+                                        <th className="py-3 px-4 font-medium">Expiry Date</th>
                                         <th className="py-3 px-4 font-medium">Items</th>
                                         <th className="py-3 px-4 font-medium text-right">Actions</th>
                                     </tr>
@@ -431,7 +431,11 @@ const EPrescriptionPage = () => {
                                                 {px.uniqueCode || px.uniquwcode || '-'}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
-                                                {px.createdAt ? new Date(px.createdAt).toLocaleDateString() : '-'}
+                                                {px.expiryDate
+                                                    ? new Date(px.expiryDate).toLocaleDateString()
+                                                    : px.createdAt
+                                                        ? new Date(px.createdAt).toLocaleDateString()
+                                                        : '-'}
                                             </td>
                                             <td className="py-3 px-4 text-sm text-gray-600">
                                                 {px.prescriptionItems?.length || px.items?.length || 0}

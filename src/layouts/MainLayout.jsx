@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ShoppingCart, Menu, User, Search, X } from 'lucide-react';
+import tenaMedLogo from '../assets/Tena med Logo.svg';
 
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -55,8 +56,12 @@ const MainLayout = () => {
             <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100 backdrop-blur-lg bg-opacity-90">
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     {/* Logo */}
-                    <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-indigo-600 bg-clip-text text-transparent">
-                        TenaMed
+                    <Link to="/" className="flex items-center gap-2">
+                        <img
+                            src={tenaMedLogo}
+                            alt="TenaMed"
+                            className="h-69 w-auto"
+                        />
                     </Link>
 
                     {/* Desktop Nav */}
@@ -204,7 +209,13 @@ const MainLayout = () => {
                 <footer className="bg-gray-900 text-gray-300 py-12">
                     <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
                         <div>
-                            <h3 className="text-white text-xl font-bold mb-4">TenaMed</h3>
+                            <div className="flex items-center gap-2 mb-4">
+                                <img
+                                    src={tenaMedLogo}
+                                    alt="TenaMed"
+                                    className="h-80 w-auto"
+                                />
+                            </div>
                             <p className="text-sm text-gray-400">Your trusted online pharmacy partner. Quality healthcare delivered to your doorstep.</p>
                         </div>
                         <div>

@@ -1,38 +1,71 @@
 import React, { useRef, useState } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ocrGetPipelineStatus, ocrUploadPrescription } from '../api/axios';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
 const UploadPrescriptionPage = () => {
     const cameraInputRef = useRef(null);
     const [file, setFile] = useState(null);
-    const [status, setStatus] = useState('idle'); // idle, uploading, success, error
+    const [status, setStatus] = useState('idle'); // idle, uploading, success, manual-review, error
     const [errorMsg, setErrorMsg] = useState('');
     const [matches, setMatches] = useState([]);
+    const [manualReviewMessage, setManualReviewMessage] = useState('');
+    const navigate = useNavigate();
+
+    const normalizePipelineStatus = (value) => (
+        String(value || '').trim().toLowerCase().replace(/[_-]+/g, ' ')
+    );
+
+    const isManualReviewStatus = (value) => {
+        const normalized = normalizePipelineStatus(value);
+        return normalized.includes('manual') && normalized.includes('review');
+    };
+
+    const mapPrescriptionMatches = (rows, prescriptionId) => {
+        const items = Array.isArray(rows) ? rows : [];
+        return items.map((match) => ({
+            ...match,
+            prescriptionRequired: false,
+            prescriptionId: match?.prescriptionId || prescriptionId || null,
+        }));
+    };
 
     const delay = (ms) => new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
 
     const pollPipelineStatus = async (prescriptionId) => {
-        const maxAttempts = 15;
+        const maxAttempts = 60;
 
-        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        for (let attempt = 0; attempt < maxAttempts; attempt += 20) {
             const response = await ocrGetPipelineStatus(prescriptionId);
             const data = response?.data || {};
-            const status = String(data.status || '').toUpperCase();
+            const rawStatus = data.status;
+            const normalizedStatus = normalizePipelineStatus(rawStatus);
 
-            if (status === 'FINISHED') {
+            if (normalizedStatus === 'finished') {
                 return {
                     done: true,
+                    status: 'FINISHED',
+                    message: data.message || '',
                     matches: Array.isArray(data.inventoryMatches) ? data.inventoryMatches : [],
                 };
             }
 
-            if (status === 'FAILED' || status === 'NOT_FOUND') {
+            if (isManualReviewStatus(rawStatus)) {
                 return {
                     done: true,
+                    status: 'MANUAL_REVIEW',
+                    message: data.message || 'Your prescription is queued for manual review.',
+                    matches: [],
+                };
+            }
+
+            if (normalizedStatus === 'failed' || normalizedStatus === 'not found') {
+                return {
+                    done: true,
+                    status: 'FAILED',
                     error: data.message || 'Prescription pipeline failed.',
                     matches: [],
                 };
@@ -87,6 +120,7 @@ const UploadPrescriptionPage = () => {
         setStatus('uploading');
         setErrorMsg('');
         setMatches([]);
+        setManualReviewMessage('');
 
         try {
             const uploadResponse = await ocrUploadPrescription(file);
@@ -94,7 +128,19 @@ const UploadPrescriptionPage = () => {
             const uploadData = uploadResponse?.data;
 
             if (!uploadData?.prescriptionId) {
-                setMatches(Array.isArray(uploadData) ? uploadData : []);
+                const immediateMatches = Array.isArray(uploadData) ? uploadData : [];
+                if (immediateMatches.length > 0) {
+                    const normalizedMatches = mapPrescriptionMatches(immediateMatches, null);
+                    navigate('/products', {
+                        state: {
+                            prescriptionMatches: normalizedMatches,
+                            fromPrescriptionUpload: true,
+                        },
+                    });
+                    return;
+                }
+
+                setMatches(immediateMatches);
                 setStatus('success');
                 return;
             }
@@ -106,8 +152,20 @@ const UploadPrescriptionPage = () => {
                 return;
             }
 
-            setMatches(pipelineResult.matches || []);
-            setStatus('success');
+            if (pipelineResult.status === 'MANUAL_REVIEW') {
+                setManualReviewMessage(pipelineResult.message || 'We will notify you by email as soon as the review is complete.');
+                setStatus('manual-review');
+                return;
+            }
+
+            const normalizedMatches = mapPrescriptionMatches(pipelineResult.matches || [], uploadData.prescriptionId);
+            navigate('/products', {
+                state: {
+                    prescriptionMatches: normalizedMatches,
+                    prescriptionId: uploadData.prescriptionId,
+                    fromPrescriptionUpload: true,
+                },
+            });
         } catch (error) {
             if (shouldUseBuilderFallback(error)) {
                 setMatches([]);
@@ -121,6 +179,16 @@ const UploadPrescriptionPage = () => {
         }
     };
 
+    const resetUploadState = () => {
+        setFile(null);
+        setMatches([]);
+        setStatus('idle');
+        setErrorMsg('');
+        setManualReviewMessage('');
+    };
+
+    const isManualReview = status === 'manual-review';
+
     return (
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl mx-auto">
@@ -132,40 +200,56 @@ const UploadPrescriptionPage = () => {
                     </p>
                 </div>
 
-                {status === 'success' ? (
+                {(status === 'success' || status === 'manual-review') ? (
                     <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center">
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="w-10 h-10 text-green-600" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">Upload Processed</h2>
-                        {matches.length === 0 ? (
-                            <p className="text-gray-600 mb-8">No matches found.</p>
-                        ) : (
-                            <div className="mb-6 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
-                                <table className="min-w-full border-collapse">
-                                    <thead>
-                                        <tr className="text-xs uppercase text-gray-500">
-                                            <th className="px-3 py-2 text-left">Prescription ID</th>
-                                            <th className="px-3 py-2 text-left">Prescription Item ID</th>
-                                            <th className="px-3 py-2 text-left">Pharmacy ID</th>
-                                            <th className="px-3 py-2 text-left">Medicine ID</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {matches.map((match, index) => (
-                                            <tr key={`${match.prescriptionItemId || index}`} className="border-t border-gray-200 align-top">
-                                                <td className="px-3 py-2 break-all">{match.prescriptionId || '-'}</td>
-                                                <td className="px-3 py-2 break-all">{match.prescriptionItemId || '-'}</td>
-                                                <td className="px-3 py-2 break-all">{match.pharmacyId || '-'}</td>
-                                                <td className="px-3 py-2 break-all">{match.medicineId || '-'}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                            {isManualReview ? 'Manual Review Started' : 'Upload Processed'}
+                        </h2>
+                        {isManualReview ? (
+                            <div className="mb-8 text-gray-600">
+                                <p className="mb-4">
+                                    Thanks for uploading your prescription. Our pharmacy team is reviewing it manually.
+                                    We will notify you by email as soon as the review is complete.
+                                </p>
+                                {manualReviewMessage && (
+                                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                        {manualReviewMessage}
+                                    </div>
+                                )}
                             </div>
+                        ) : (
+                            matches.length === 0 ? (
+                                <p className="text-gray-600 mb-8">No matches found.</p>
+                            ) : (
+                                <div className="mb-6 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
+                                    <table className="min-w-full border-collapse">
+                                        <thead>
+                                            <tr className="text-xs uppercase text-gray-500">
+                                                <th className="px-3 py-2 text-left">Prescription ID</th>
+                                                <th className="px-3 py-2 text-left">Prescription Item ID</th>
+                                                <th className="px-3 py-2 text-left">Pharmacy ID</th>
+                                                <th className="px-3 py-2 text-left">Medicine ID</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {matches.map((match, index) => (
+                                                <tr key={`${match.prescriptionItemId || index}`} className="border-t border-gray-200 align-top">
+                                                    <td className="px-3 py-2 break-all">{match.prescriptionId || '-'}</td>
+                                                    <td className="px-3 py-2 break-all">{match.prescriptionItemId || '-'}</td>
+                                                    <td className="px-3 py-2 break-all">{match.pharmacyId || '-'}</td>
+                                                    <td className="px-3 py-2 break-all">{match.medicineId || '-'}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )
                         )}
                         <div className="flex justify-center gap-4">
-                            <button onClick={() => { setFile(null); setMatches([]); setStatus('idle'); }} className="text-emerald-600 hover:bg-emerald-50 px-6 py-2 rounded-full font-medium transition">
+                            <button onClick={resetUploadState} className="text-emerald-600 hover:bg-emerald-50 px-6 py-2 rounded-full font-medium transition">
                                 Upload Another
                             </button>
                             <Link to="/" className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold hover:bg-emerald-700 transition">

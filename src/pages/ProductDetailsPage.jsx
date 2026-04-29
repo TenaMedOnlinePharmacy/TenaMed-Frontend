@@ -52,6 +52,20 @@ const ProductDetailsPage = () => {
     const [quantity, setQuantity] = useState(1);
     const { addToCart } = useCart();
     const navigate = useNavigate();
+    const prescriptionOverride = location?.state?.prescriptionOverride;
+    const matchedPrescriptionId = location?.state?.prescriptionId;
+
+    const applyPrescriptionOverride = (value) => {
+        if (!value || prescriptionOverride !== false) {
+            return value;
+        }
+
+        return {
+            ...value,
+            prescriptionRequired: false,
+            ...(matchedPrescriptionId ? { prescriptionId: matchedPrescriptionId } : {}),
+        };
+    };
 
     useEffect(() => {
         let isMounted = true;
@@ -59,7 +73,7 @@ const ProductDetailsPage = () => {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
 
         if (routedProduct) {
-            setProduct(routedProduct);
+            setProduct(applyPrescriptionOverride(routedProduct));
             if (!isUuid) {
                 setIsLoading(false);
                 return () => {
@@ -83,8 +97,7 @@ const ProductDetailsPage = () => {
                     }
 
                     const mappedProduct = mapMedicineToProduct(rows[0]);
-
-                    setProduct(mappedProduct);
+                    setProduct(applyPrescriptionOverride(mappedProduct));
                 }
             } catch {
                 if (isMounted) {
