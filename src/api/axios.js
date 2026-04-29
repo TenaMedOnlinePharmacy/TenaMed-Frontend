@@ -240,6 +240,10 @@ export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pha
 export const doctorGetPrescriptions = () => api.get('/doctors/prescriptions', buildAuthHeaders());
 export const doctorUpdatePrescription = (id, payload) => api.patch(`/doctors/prescriptions/${id}`, payload, buildAuthHeaders());
 export const doctorDeletePrescription = (id) => api.delete(`/doctors/prescriptions/${id}`, buildAuthHeaders());
+export const prescriptionGetHospitalIssued = (params = {}) => api.get(
+    '/prescriptions/hospital-issued',
+    withAuthHeaders({ params: sanitizeParams(params) }),
+);
 
 // Patient profile
 export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildAuthHeaders());

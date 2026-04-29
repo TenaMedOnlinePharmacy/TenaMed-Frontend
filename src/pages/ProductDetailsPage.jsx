@@ -23,14 +23,20 @@ const getMedicineImageValue = (medicine) => (
 
 const mapMedicineToProduct = (medicine) => {
     const price = Number(medicine?.price ?? medicine?.doseValue ?? 0);
+    const brandName = medicine?.brandName || medicine?.brand || '';
+    const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
+    const hasDistinctBrand = Boolean(brandName) && brandName !== medicineName;
+    const displayName = hasDistinctBrand ? brandName : medicineName;
     const productId = medicine?.productId || medicine?.medicineId || medicine?.id || null;
 
     return {
-        id: productId || medicine?.medicineName || 'medicine',
+        id: productId || displayName || 'medicine',
         productId,
         medicineId: medicine?.medicineId || medicine?.productId || medicine?.id || null,
         pharmacyId: medicine?.pharmacyId || null,
-        name: medicine?.medicineName || medicine?.name || 'Unnamed medicine',
+        name: displayName,
+        brandName: hasDistinctBrand ? brandName : '',
+        genericName: hasDistinctBrand ? medicineName : '',
         category: medicine?.medicineCategory || medicine?.category || 'General',
         pharmacy: medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy',
         description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
@@ -201,8 +207,13 @@ const ProductDetailsPage = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <h1 className="text-3xl font-bold text-gray-900 mt-4 mb-2">{product.name}</h1>
-                                    <p className="text-sm text-gray-500">
+                                    <h1 className="text-3xl font-bold text-gray-900 mt-4">{product.name}</h1>
+                                    {product.genericName && (
+                                        <p className="text-sm text-gray-500 mt-2">
+                                            Generic name: <span className="font-medium text-gray-700">{product.genericName}</span>
+                                        </p>
+                                    )}
+                                    <p className="text-sm text-gray-500 mt-2">
                                         Sold by <span className="font-semibold text-emerald-600">{product.pharmacy}</span>
                                     </p>
                                 </div>
