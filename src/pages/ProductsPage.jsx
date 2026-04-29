@@ -389,28 +389,7 @@ const ProductsPage = () => {
 
                 <div className="flex flex-col md:flex-row gap-8">
                     {/* Sidebar Filters */}
-                    <div className="w-full md:w-64 flex-shrink-0">
-                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Filter className="w-5 h-5 text-emerald-600" />
-                                <h3 className="font-semibold text-gray-800">Categories</h3>
-                            </div>
-                            <div className="space-y-2">
-                                {categories.map((category) => (
-                                    <button
-                                        key={category}
-                                        onClick={() => setSelectedCategory(category)}
-                                        className={`nav-btn w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${selectedCategory === category
-                                            ? 'bg-emerald-50 text-emerald-700 font-medium'
-                                            : 'text-gray-600 hover:bg-gray-50'
-                                            }`}
-                                    >
-                                        {category}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+
 
                     {/* Product Grid */}
                     <div className="flex-1">
