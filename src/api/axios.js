@@ -236,6 +236,11 @@ export const pharmacyGetIncomingOrders = () => api.get('/orders/pharmacyOrders',
 // Prescription inventory matching
 export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pharmacy/prescriptions/${prescriptionId}/inventory-matches`, buildAuthHeaders());
 
+// Prescriptions
+export const doctorGetPrescriptions = () => api.get('/doctors/prescriptions', buildAuthHeaders());
+export const doctorUpdatePrescription = (id, payload) => api.patch(`/doctors/prescriptions/${id}`, payload, buildAuthHeaders());
+export const doctorDeletePrescription = (id) => api.delete(`/doctors/prescriptions/${id}`, buildAuthHeaders());
+
 // Patient profile
 export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildAuthHeaders());
 export const patientGetProfile = () => api.get('/patient/profile', buildAuthHeaders());
