@@ -190,44 +190,44 @@ const UploadPrescriptionPage = () => {
     const isManualReview = status === 'manual-review';
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-[calc(100vh-4.25rem)] bg-transparent py-14 px-4 sm:px-6 lg:px-8 relative z-10 transition-colors">
             <div className="max-w-2xl mx-auto">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-4">Upload Prescription</h1>
-                    <p className="text-gray-600">
+                <div className="text-center mb-10 animate-in fade-in slide-in-from-bottom-2">
+                    <h1 className="font-syne text-3xl md:text-4xl font-bold text-[var(--text)] mb-4 tracking-tight">Upload Prescription</h1>
+                    <p className="text-[var(--text2)] font-light leading-relaxed max-w-xl mx-auto">
                         Please upload a clear image or PDF of your valid prescription.
                         Our pharmacists will verify it before processing your order.
                     </p>
                 </div>
 
                 {(status === 'success' || status === 'manual-review') ? (
-                    <div className="bg-white p-10 rounded-2xl shadow-sm border border-gray-100 text-center">
-                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-10 h-10 text-green-600" />
+                    <div className="nova-card p-10 text-center animate-in fade-in slide-in-from-bottom-2">
+                        <div className="w-20 h-20 bg-[rgba(16,185,129,0.1)] rounded-2xl shadow-[var(--glow)] border border-[rgba(16,185,129,0.2)] flex items-center justify-center mx-auto mb-6 text-emerald-500">
+                            <CheckCircle className="w-10 h-10" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                        <h2 className="font-syne text-2xl font-bold text-[var(--text)] mb-4 tracking-tight">
                             {isManualReview ? 'Manual Review Started' : 'Upload Processed'}
                         </h2>
                         {isManualReview ? (
-                            <div className="mb-8 text-gray-600">
+                            <div className="mb-8 text-[var(--text2)] font-light leading-relaxed">
                                 <p className="mb-4">
                                     Thanks for uploading your prescription. Our pharmacy team is reviewing it manually.
                                     We will notify you by email as soon as the review is complete.
                                 </p>
                                 {manualReviewMessage && (
-                                    <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                                    <div className="rounded-xl border border-[rgba(16,185,129,0.2)] bg-[rgba(16,185,129,0.05)] px-4 py-4 text-sm text-emerald-500 font-medium">
                                         {manualReviewMessage}
                                     </div>
                                 )}
                             </div>
                         ) : (
                             matches.length === 0 ? (
-                                <p className="text-gray-600 mb-8">No matches found.</p>
+                                <p className="text-[var(--text2)] mb-8 font-light">No matches found.</p>
                             ) : (
-                                <div className="mb-6 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-4 text-left text-sm text-gray-700">
+                                <div className="mb-6 overflow-x-auto rounded-xl border border-[var(--border2)] bg-[var(--surface2)] p-4 text-left text-sm text-[var(--text2)]">
                                     <table className="min-w-full border-collapse">
                                         <thead>
-                                            <tr className="text-xs uppercase text-gray-500">
+                                            <tr className="text-xs uppercase tracking-wider text-[var(--text3)]">
                                                 <th className="px-3 py-2 text-left">Prescription ID</th>
                                                 <th className="px-3 py-2 text-left">Prescription Item ID</th>
                                                 <th className="px-3 py-2 text-left">Pharmacy ID</th>
@@ -236,11 +236,11 @@ const UploadPrescriptionPage = () => {
                                         </thead>
                                         <tbody>
                                             {matches.map((match, index) => (
-                                                <tr key={`${match.prescriptionItemId || index}`} className="border-t border-gray-200 align-top">
-                                                    <td className="px-3 py-2 break-all">{match.prescriptionId || '-'}</td>
-                                                    <td className="px-3 py-2 break-all">{match.prescriptionItemId || '-'}</td>
-                                                    <td className="px-3 py-2 break-all">{match.pharmacyId || '-'}</td>
-                                                    <td className="px-3 py-2 break-all">{match.medicineId || '-'}</td>
+                                                <tr key={`${match.prescriptionItemId || index}`} className="border-t border-[var(--border2)] hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors align-top">
+                                                    <td className="px-3 py-3 break-all font-mono">{match.prescriptionId || '-'}</td>
+                                                    <td className="px-3 py-3 break-all font-mono">{match.prescriptionItemId || '-'}</td>
+                                                    <td className="px-3 py-3 break-all font-mono">{match.pharmacyId || '-'}</td>
+                                                    <td className="px-3 py-3 break-all font-mono">{match.medicineId || '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -248,22 +248,22 @@ const UploadPrescriptionPage = () => {
                                 </div>
                             )
                         )}
-                        <div className="flex justify-center gap-4">
-                            <button onClick={resetUploadState} className="text-emerald-600 hover:bg-emerald-50 px-6 py-2 rounded-full font-medium transition">
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <button onClick={resetUploadState} className="btn-ghost px-8 py-3 rounded-full">
                                 Upload Another
                             </button>
-                            <Link to="/" className="bg-emerald-600 text-white px-6 py-2 rounded-full font-bold hover:bg-emerald-700 transition">
+                            <Link to="/" className="btn-primary px-8 py-3 rounded-full text-center">
                                 Back to Home
                             </Link>
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                    <div className="nova-card p-8 sm:p-10 animate-in fade-in slide-in-from-bottom-2">
                         <div className="flex flex-col sm:flex-row gap-3 mb-6">
                             <button
                                 type="button"
                                 onClick={() => cameraInputRef.current?.click()}
-                                className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition"
+                                className="w-full sm:w-auto px-6 py-2.5 rounded-xl btn-secondary"
                             >
                                 Take Photo
                             </button>
@@ -276,36 +276,36 @@ const UploadPrescriptionPage = () => {
                                 onChange={handleCameraChange}
                             />
                         </div>
-                        <div className="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center hover:bg-gray-50 transition relative">
+                        <div className="border-2 border-dashed border-[var(--border2)] rounded-2xl p-10 text-center hover:bg-[rgba(var(--accent-rgb),0.02)] hover:border-[rgba(var(--accent-rgb),0.4)] transition-all duration-300 relative group">
                             <input
                                 type="file"
-                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                                 onChange={handleFileChange}
                                 accept=".jpg,.jpeg,.png,.pdf"
                             />
                             {file ? (
                                 <div className="flex flex-col items-center">
-                                    <FileText className="w-16 h-16 text-emerald-500 mb-4" />
-                                    <p className="font-medium text-gray-900 text-lg">{file.name}</p>
-                                    <p className="text-sm text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                    <FileText className="w-16 h-16 text-[var(--accent)] mb-4" />
+                                    <p className="font-medium text-[var(--text)] text-lg">{file.name}</p>
+                                    <p className="text-sm text-[var(--text3)] font-mono mt-1">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                                     <button
                                         onClick={(e) => { e.preventDefault(); setFile(null); }}
-                                        className="mt-4 text-red-500 hover:bg-red-50 px-4 py-2 rounded-full text-sm font-medium z-10 relative"
+                                        className="mt-6 text-[var(--danger)] hover:bg-[rgba(var(--danger-rgb),0.1)] border border-transparent hover:border-[var(--danger-border)] px-5 py-2 rounded-xl text-sm font-semibold transition z-30 relative"
                                     >
                                         Remove File
                                     </button>
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center">
-                                    <Upload className="w-16 h-16 text-gray-400 mb-4" />
-                                    <p className="font-medium text-gray-900 text-lg mb-2">Click to upload or drag and drop</p>
-                                    <p className="text-sm text-gray-500">JPG, PNG or PDF (MAX. 5MB)</p>
+                                <div className="flex flex-col items-center pointer-events-none">
+                                    <Upload className="w-16 h-16 text-[var(--text3)] mb-4 group-hover:text-[var(--accent)] group-hover:scale-110 transition-all duration-300" />
+                                    <p className="font-medium text-[var(--text)] text-lg mb-2">Click to upload or drag and drop</p>
+                                    <p className="text-sm text-[var(--text3)] font-mono">JPG, PNG or PDF (MAX. 5MB)</p>
                                 </div>
                             )}
                         </div>
 
                         {errorMsg && (
-                            <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg flex items-center gap-2">
+                            <div className="mt-5 p-4 bg-[rgba(var(--danger-rgb),0.1)] border border-[rgba(var(--danger-rgb),0.2)] text-[var(--danger)] rounded-xl flex items-center gap-3">
                                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
                                 <span className="text-sm font-medium">{errorMsg}</span>
                             </div>
@@ -315,15 +315,11 @@ const UploadPrescriptionPage = () => {
                             <button
                                 onClick={handleUpload}
                                 disabled={!file || status === 'uploading'}
-                                className={`w-full py-4 rounded-xl font-bold shadow-lg transition flex items-center justify-center gap-2 text-white
-                                    ${!file || status === 'uploading'
-                                        ? 'bg-gray-300 cursor-not-allowed shadow-none'
-                                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
-                                    }`}
+                                className={`btn-primary w-full py-4 text-base rounded-xl flex items-center justify-center gap-2 ${(!file || status === 'uploading') ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 {status === 'uploading' ? (
                                     <>
-                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                                         Uploading...
                                     </>
                                 ) : (

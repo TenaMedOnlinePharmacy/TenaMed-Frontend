@@ -32,11 +32,13 @@ const mapMedicineToProduct = (medicine, index) => {
     const productId = medicine?.productId || medicine?.medicineId || medicine?.id;
     const id = productId || `${displayName}-${pharmacyName}-${index}`;
     const routeId = productId || `name-${encodeURIComponent(displayName)}-${index}`;
+    const listKey = productId ? `${productId}-${index}` : id;
     const hasStockInfo = typeof medicine?.availableQuantity === 'number';
     const inStock = hasStockInfo ? medicine.availableQuantity > 0 : true;
 
     return {
         id,
+        listKey,
         routeId,
         productId,
         medicineId: medicine?.medicineId || medicine?.productId || medicine?.id,
@@ -69,6 +71,7 @@ const mapMatchedPrescriptionToProduct = (medicine, index, prescriptionId) => {
 const ProductsPage = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
+    const [activeSort, setActiveSort] = useState('name');
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState('');
@@ -230,292 +233,280 @@ const ProductsPage = () => {
             ? prescriptionResult.refillsUsed
             : '-';
 
-    const filteredProducts = products.filter(product => {
+    const filteredProducts = products.filter((product) => {
         const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
-        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.pharmacy.toLowerCase().includes(searchQuery.toLowerCase());
+        const normalizedQuery = searchQuery.toLowerCase();
+        const matchesSearch = product.name.toLowerCase().includes(normalizedQuery) ||
+            (product.brandName || '').toLowerCase().includes(normalizedQuery) ||
+            (product.genericName || '').toLowerCase().includes(normalizedQuery) ||
+            product.pharmacy.toLowerCase().includes(normalizedQuery);
         return matchesCategory && matchesSearch;
+    }).sort((a, b) => {
+        if (activeSort === 'name') return a.name.localeCompare(b.name);
+        if (activeSort === 'price-asc') return (a.price || 0) - (b.price || 0);
+        if (activeSort === 'price-desc') return (b.price || 0) - (a.price || 0);
+        if (activeSort === 'stock') return (b.inStock ? 1 : 0) - (a.inStock ? 1 : 0);
+        return 0;
     });
 
     const isPrescriptionList = Boolean(usePrescriptionMatches && prescriptionMatches);
 
     return (
-        <div className="bg-gray-50 min-h-screen py-8">
-            <div className="container mx-auto px-4">
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800">Browse Medicines</h1>
-                        <p className="text-gray-500 mt-1">Found {filteredProducts.length} items</p>
+        <div className="bg-transparent">
+            {/* HERO */}
+            <div className="nova-hero">
+                <div className="nova-hero-ring"></div>
+                <div className="nova-hero-left">
+                    <div className="nova-hero-badge">
+                        <div className="nova-hero-badge-dot"></div>
+                        Next-Gen Pharmacy Platform
                     </div>
-
-                    <div className="flex w-full md:w-auto gap-3">
-                        <div className="relative flex-grow md:w-80">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                placeholder="Search medicine or pharmacy..."
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                ref={medicineSearchInputRef}
-                            />
-                        </div>
+                    <h1 className="nova-hero-title">
+                        Your Health,<br />
+                        <span className="grad-text">Delivered Fast</span>
+                    </h1>
+                    <p className="nova-hero-sub">Browse verified medicines, compare generics, and checkout with confidence. Prescription management built right in.</p>
+                    <div className="nova-hero-actions">
+                        <a href="#main-grid" className="btn-primary" onClick={(e) => { e.preventDefault(); document.getElementById('main-grid')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                            Explore Medicines
+                        </a>
+                        <Link to="/upload-prescription" className="btn-ghost">Upload Rx →</Link>
                     </div>
                 </div>
-
-                <div className="mb-8 rounded-2xl border border-emerald-100 bg-white p-6 shadow-sm">
-                    <div className="flex flex-col gap-4">
-                        <div>
-                            <h2 className="text-lg font-semibold text-gray-900">Find ePrescription</h2>
-                            <p className="text-sm text-gray-500">Search medicines issued by a doctor using the unique code and phone number.</p>
-                        </div>
-                        <form onSubmit={handlePrescriptionSearch} className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Unique code</label>
-                                <input
-                                    type="text"
-                                    value={prescriptionSearch.uniqueCode}
-                                    onChange={(event) => {
-                                        setPrescriptionSearch((prev) => ({ ...prev, uniqueCode: event.target.value }));
-                                        setPrescriptionError('');
-                                    }}
-                                    placeholder="Enter unique code"
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone number</label>
-                                <input
-                                    type="tel"
-                                    value={prescriptionSearch.phone}
-                                    onChange={(event) => {
-                                        setPrescriptionSearch((prev) => ({ ...prev, phone: event.target.value }));
-                                        setPrescriptionError('');
-                                    }}
-                                    placeholder="09xxxxxxxx or 07xxxxxxxx"
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-                                />
-                                <p className="mt-1 text-xs text-gray-400">Phone must be 10 digits and start with 09 or 07.</p>
-                            </div>
-                            <div className="flex items-end">
-                                <button
-                                    type="submit"
-                                    disabled={isPrescriptionLoading}
-                                    className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white hover:bg-emerald-700 transition disabled:opacity-60"
-                                >
-                                    <Search className="w-4 h-4" />
-                                    {isPrescriptionLoading ? 'Searching...' : 'Search'}
-                                </button>
-                            </div>
-                        </form>
-                        {prescriptionError && (
-                            <p className="text-sm text-red-600">{prescriptionError}</p>
-                        )}
+                <div className="nova-hero-right">
+                    <div className="nova-hero-image-wrap">
+                        <div className="nova-hero-image-glow"></div>
+                        <img 
+                            className="nova-hero-img"
+                            src={FALLBACK_MEDICINE_IMAGE}
+                            alt="Prescription Medicine Bottles"
+                            style={{ borderRadius: '20px' }}
+                        />
                     </div>
-                </div>
-
-                {prescriptionResult && (
-                    <div className="mb-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Prescription details</h3>
-                                <p className="text-sm text-gray-500">Maximum refills: {maxRefillsAllowed} • Refill used: {refillsUsed}</p>
-                            </div>
-                        </div>
-
-                        {prescriptionItems.length > 0 ? (
-                            <div className="mt-4 space-y-4">
-                                {prescriptionItems.map((item, index) => {
-                                    const itemName = item?.name || item?.medicineName || 'Unnamed medicine';
-                                    const itemQuantity = item?.quantity ?? item?.qty ?? '-';
-                                    const itemForm = item?.from || item?.form || '-';
-                                    const itemInstruction = item?.instruction || item?.instructions || 'No instruction provided.';
-                                    const itemStrength = item?.strength || '-';
-
-                                    return (
-                                        <div key={item?.prescriptionItemId || item?.medicineId || index} className="rounded-xl border border-gray-100 p-4">
-                                            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                                <div className="space-y-2">
-                                                    <div>
-                                                        <p className="text-xs uppercase tracking-wide text-gray-400">Medicine</p>
-                                                        <p className="text-base font-semibold text-gray-900">{itemName}</p>
-                                                    </div>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                                                        <p className="text-gray-600"><span className="font-medium text-gray-900">Quantity:</span> {itemQuantity}</p>
-                                                        <p className="text-gray-600"><span className="font-medium text-gray-900">Form:</span> {itemForm}</p>
-                                                        <p className="text-gray-600"><span className="font-medium text-gray-900">Strength:</span> {itemStrength}</p>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs uppercase tracking-wide text-gray-400">Instruction</p>
-                                                        <p className="text-sm text-gray-700 whitespace-pre-line">{itemInstruction}</p>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handlePrescriptionItemSearch(itemName)}
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition"
-                                                    >
-                                                        <Search className="w-4 h-4" />
-                                                        Search medicine
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <p className="mt-4 text-sm text-gray-500">No prescription items were returned.</p>
-                        )}
-                    </div>
-                )}
-
-                {isPrescriptionList && (
-                    <div className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div>
-                            <span className="font-semibold">Prescription verified.</span> Showing matched medicines from your upload.
-                        </div>
-                        <button
-                            type="button"
-                            onClick={handleBrowseAll}
-                            className="px-4 py-2 rounded-lg bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition"
-                        >
-                            Browse all medicines
-                        </button>
-                    </div>
-                )}
-
-                <div className="flex flex-col md:flex-row gap-8">
-                    {/* Sidebar Filters */}
-
-
-                    {/* Product Grid */}
-                    <div className="flex-1">
-                        {isLoading ? (
-                            <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
-                                <p className="text-gray-500">Loading medicines...</p>
-                            </div>
-                        ) : errorMsg ? (
-                            <div className="text-center py-20 bg-white rounded-xl border border-red-100">
-                                <h3 className="text-lg font-medium text-red-700">Failed to load medicines</h3>
-                                <p className="text-red-500">{errorMsg}</p>
-                            </div>
-                        ) : filteredProducts.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {filteredProducts.map((product) => (
-                                    <div key={product.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
-                                        <Link
-                                            to={`/products/${product.routeId || product.id}`}
-                                            state={{
-                                                product,
-                                                prescriptionOverride: isPrescriptionList ? false : undefined,
-                                                prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
-                                            }}
-                                            className="block h-48 overflow-hidden relative bg-gray-100"
-                                        >
-                                            <img
-                                                src={product.image}
-                                                alt={product.name}
-                                                onError={(event) => {
-                                                    event.currentTarget.src = FALLBACK_MEDICINE_IMAGE;
-                                                }}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            />
-                                            {!product.inStock && (
-                                                <div className="absolute inset-0 bg-white/60 flex items-center justify-center backdrop-blur-[1px]">
-                                                    <span className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Out of Stock</span>
-                                                </div>
-                                            )}
-                                        </Link>
-                                        <div className="p-5">
-                                            <div className="mb-1 flex items-center gap-2">
-                                                <div className="text-xs font-medium text-emerald-600">{product.category}</div>
-                                                {product.prescriptionRequired && (
-                                                    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                                                        Prescription Required
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <Link
-                                                to={`/products/${product.routeId || product.id}`}
-                                                state={{
-                                                    product,
-                                                    prescriptionOverride: isPrescriptionList ? false : undefined,
-                                                    prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
-                                                }}
-                                                className="block"
-                                            >
-                                                <h3 className="font-bold text-gray-900 mb-1 hover:text-emerald-600 transition">{product.name}</h3>
-                                            </Link>
-                                            <p className="text-sm text-gray-500 mb-3">Sold by: {product.pharmacy}</p>
-
-                                            <div className="flex items-center justify-between mt-4">
-                                                {typeof product.price === 'number' ? (
-                                                    <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
-                                                ) : (
-                                                    <span className="text-sm font-semibold text-gray-500">Price unavailable</span>
-                                                )}
-                                                {product.prescriptionRequired ? (
-                                                    <Link
-                                                        to="/upload-prescription"
-                                                        state={{ medicine: product, source: 'products-list' }}
-                                                        className="inline-flex items-center rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-600 transition-colors"
-                                                    >
-                                                        Upload prescription
-                                                    </Link>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => addToCart(product, 1)}
-                                                        disabled={!product.inStock}
-                                                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${product.inStock
-                                                            ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800'
-                                                            : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                                            }`}
-                                                    >
-                                                        <ShoppingCart className="w-4 h-4" />
-                                                        Add
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-20 bg-white rounded-xl border border-gray-100">
-                                <div className="inline-flex p-4 rounded-full bg-gray-100 mb-4">
-                                    <Search className="w-8 h-8 text-gray-400" />
-                                </div>
-                                <h3 className="text-lg font-medium text-gray-900">No medicines found</h3>
-                                {isPrescriptionList ? (
-                                    <>
-                                        <p className="text-gray-500">No matches were found for your prescription.</p>
-                                        <button
-                                            onClick={handleBrowseAll}
-                                            className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
-                                        >
-                                            Browse all medicines
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p className="text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
-                                        <button
-                                            onClick={() => { setSelectedCategory('All'); setSearchQuery(''); }}
-                                            className="mt-4 text-emerald-600 hover:text-emerald-500 font-medium"
-                                        >
-                                            Clear all filters
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )}
+                    <div className="nova-search-wrap">
+                        <Search className="nova-search-icon w-4 h-4" />
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            placeholder="Search medicines, ingredients, categories…" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            ref={medicineSearchInputRef}
+                        />
+                        <span className="nova-search-kbd">⌘K</span>
                     </div>
                 </div>
             </div>
+
+            {/* FILTER BAR */ }
+    <div className="nova-filter-bar">
+        <span className="nova-filter-label">Filter</span>
+        {categories.slice(0, 8).map(cat => (
+            <button
+                key={cat}
+                className={`nova-pill ${selectedCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
+            >
+                {cat}
+            </button>
+        ))}
+
+        <div className="nova-sort-right">
+            <span className="nova-filter-label">Sort</span>
+            <select onChange={(e) => setActiveSort(e.target.value)} value={activeSort}>
+                <option value="name">Name A–Z</option>
+                <option value="price-asc">Price ↑</option>
+                <option value="price-desc">Price ↓</option>
+                <option value="stock">In Stock First</option>
+            </select>
         </div>
+    </div>
+
+    {/* MAIN AREA */ }
+    <div className="nova-main" id="main-grid">
+
+        {/* E-Prescription Finder formatted as Featured */}
+        <div className="nova-featured hover:transform-none cursor-default mb-4">
+            <div className="nova-featured-shimmer"></div>
+            <div style={{ fontSize: '2.5rem', flexShrink: 0 }}>🩺</div>
+            <div style={{ flex: 1, zIndex: 1 }}>
+                <div className="nova-featured-pill">▸ MEDICAL</div>
+                <div className="nova-featured-name">Find ePrescription</div>
+                <div className="nova-featured-desc">Search medicines issued by a doctor using unique code and phone.</div>
+                {prescriptionError && <p className="text-sm text-red-500 mt-2">{prescriptionError}</p>}
+            </div>
+            <form onSubmit={handlePrescriptionSearch} className="nova-featured-right flex sm:flex-row flex-col gap-2 relative z-10">
+                <input
+                    type="text"
+                    value={prescriptionSearch.uniqueCode}
+                    onChange={(e) => setPrescriptionSearch({ ...prescriptionSearch, uniqueCode: e.target.value })}
+                    placeholder="Unique Code"
+                    className="bg-[var(--surface)] border border-[var(--border2)] rounded-lg px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
+                <input
+                    type="tel"
+                    value={prescriptionSearch.phone}
+                    onChange={(e) => setPrescriptionSearch({ ...prescriptionSearch, phone: e.target.value })}
+                    placeholder="Phone (09...)"
+                    className="bg-[var(--surface)] border border-[var(--border2)] rounded-lg px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                />
+                <button type="submit" disabled={isPrescriptionLoading} className="nova-featured-add">
+                    {isPrescriptionLoading ? 'Searching...' : 'Find'}
+                </button>
+            </form>
+        </div>
+
+        {/* Prescription Results Info */}
+        {prescriptionResult && (
+            <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)] p-6 shadow-sm">
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-[var(--text)]">Prescription details</h3>
+                    <p className="text-sm text-[var(--text3)]">Maximum refills: {maxRefillsAllowed} • Refill used: {refillsUsed}</p>
+                </div>
+                {prescriptionItems.length > 0 ? (
+                    <div className="space-y-4">
+                        {prescriptionItems.map((item, idx) => (
+                            <div key={idx} className="rounded-lg border border-[var(--border)] p-4 bg-[var(--surface)]">
+                                <div className="flex flex-col sm:flex-row justify-between gap-4">
+                                    <div>
+                                        <p className="text-xs uppercase tracking-wide text-[var(--text3)]">Medicine</p>
+                                        <p className="text-base font-semibold text-[var(--text)]">{item?.name || item?.medicineName || 'Unnamed'}</p>
+                                        <div className="flex gap-4 mt-2 text-sm text-[var(--text2)]">
+                                            <span>Form: {item?.form || '-'}</span>
+                                            <span>Qty: {item?.quantity ?? item?.qty ?? '-'}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handlePrescriptionItemSearch(item?.name || item?.medicineName)}
+                                        className="btn-ghost"
+                                    >
+                                        Search Code
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-[var(--text3)]">No prescription items found.</p>
+                )}
+            </div>
+        )}
+
+        {isPrescriptionList && (
+            <div className="mb-4 rounded-xl border border-[var(--accent2-rgb)] bg-[rgba(var(--accent2-rgb),0.1)] px-4 py-3 flex items-center justify-between">
+                <span className="text-sm text-[var(--text)]"><span className="font-semibold text-[var(--accent2)]">Verified.</span> Showing matched items.</span>
+                <button onClick={handleBrowseAll} className="btn-ghost" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>Browse All</button>
+            </div>
+        )}
+
+        <div className="nova-section-head">
+            <div className="nova-section-title">Medicines Catalogue {selectedCategory !== 'All' ? `(${selectedCategory})` : ''}</div>
+            <div className="nova-count-badge" id="count-label">{filteredProducts.length} items</div>
+        </div>
+
+        {isLoading ? (
+            <div className="nova-empty">
+                <div className="nova-empty-icon animate-pulse">⏳</div>
+                <div className="nova-empty-msg">Loading catalogue...</div>
+            </div>
+        ) : filteredProducts.length > 0 ? (
+            <div className="nova-grid" id="med-grid">
+                {filteredProducts.map((product, i) => {
+                    const isAdded = false; // Add to cart state logic if needed
+                    const hasLowStock = product.inStock; // We can use mock UI for stock percentages 
+                    const stockPct = product.inStock ? 85 : 0;
+                    const stockColor = stockPct > 50 ? 'var(--accent2)' : 'var(--danger)';
+
+                    return (
+                        <div key={product.listKey || product.id} className="nova-card" style={{ animationDelay: `${i * 0.05}s` }}>
+                            <div className="nova-card-top">
+                                <Link
+                                    to={`/products/${product.routeId || product.id}`}
+                                    state={{
+                                        product,
+                                        prescriptionOverride: isPrescriptionList ? false : undefined,
+                                        prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
+                                    }}
+                                    className="nova-card-icon-wrap"
+                                >
+                                    <img src={product.image} className="nova-card-icon-img" alt={product.name} onError={(e) => { e.currentTarget.src = FALLBACK_MEDICINE_IMAGE; }} />
+                                </Link>
+                                <div className="nova-badges">
+                                    {product.prescriptionRequired ? (
+                                        <span className="nova-badge nova-badge-rx">Rx Only</span>
+                                    ) : (
+                                        <span className="nova-badge nova-badge-otc">OTC</span>
+                                    )}
+                                    {!product.inStock && <span className="nova-badge nova-badge-low">OOS</span>}
+                                </div>
+                            </div>
+
+                            <Link
+                                to={`/products/${product.routeId || product.id}`}
+                                state={{ product }}
+                                className="no-underline group"
+                            >
+                                <div className="nova-card-name group-hover:text-[var(--accent)] transition-colors">{product.name}</div>
+                                {product.genericName && <div className="nova-card-generic">{product.genericName}</div>}
+                                <span className="nova-card-cat">{product.category}</span>
+                            </Link>
+
+                            <div>
+                                <div className="nova-stock-row">
+                                    <span className="nova-stock-text">Availability</span>
+                                    <span className="nova-stock-val" style={{ color: stockColor }}>{product.inStock ? 'Available' : 'Out of Stock'}</span>
+                                </div>
+                                <div className="nova-stock-bar">
+                                    <div className="nova-stock-fill" style={{ width: `${stockPct}%`, background: stockColor }}></div>
+                                </div>
+                            </div>
+
+                            <div className="nova-card-bottom">
+                                <div className="nova-price-wrap">
+                                    {typeof product.price === 'number' ? (
+                                        <div className="nova-price">${product.price.toFixed(2)}</div>
+                                    ) : (
+                                        <div className="nova-price opacity-50 text-sm">Unavailable</div>
+                                    )}
+                                    <span className="nova-price-unit">per pack</span>
+                                </div>
+                                {product.prescriptionRequired ? (
+                                    <Link
+                                        to="/upload-prescription"
+                                        state={{ medicine: product, source: 'products-list' }}
+                                        className="nova-icon-btn"
+                                        title="Upload Rx"
+                                    >
+                                        📄
+                                    </Link>
+                                ) : (
+                                    <button
+                                        className={`nova-add-btn ${isAdded ? 'added' : ''}`}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            addToCart(product, 1);
+                                        }}
+                                        disabled={!product.inStock}
+                                        style={!product.inStock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                    >
+                                        +
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        ) : (
+            <div className="nova-empty">
+                <div className="nova-empty-icon">🔍</div>
+                <div className="nova-empty-msg">No medicines found for your search.</div>
+                <button onClick={handleBrowseAll} className="btn-ghost mt-4">Clear Filters</button>
+            </div>
+        )}
+    </div>
+        </div >
     );
 };
 

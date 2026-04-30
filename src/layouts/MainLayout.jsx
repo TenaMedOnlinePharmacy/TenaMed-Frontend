@@ -12,6 +12,28 @@ const MainLayout = () => {
     const { getCartCount, refreshCart } = useCart();
     const { isAuthenticated, userRole, userEmail, logout } = useAuth();
     const shouldShowFooter = location.pathname !== '/login' && !location.pathname.startsWith('/register');
+    
+    // Theme toggle state
+    const [isDark, setIsDark] = useState(() => {
+        const savedTheme = localStorage.getItem('nova-theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            return savedTheme === 'dark';
+        }
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        if (!currentTheme) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            return true;
+        }
+        return currentTheme === 'dark';
+    });
+
+    const toggleTheme = () => {
+        const nextTheme = isDark ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem('nova-theme', nextTheme);
+        setIsDark(!isDark);
+    };
 
     const navByRole = {
         guest: [
@@ -53,151 +75,108 @@ const MainLayout = () => {
     return (
         <div className="flex flex-col min-h-screen font-sans text-gray-800">
             {/* Navbar */}
-            <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-gray-100 backdrop-blur-lg bg-opacity-90">
-                <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-                    {/* Logo */}
-                    <Link to="/" className="flex items-center gap-2">
-                        <img
-                            src={tenaMedLogo}
-                            alt="TenaMed"
-                            className="h-69 w-auto"
-                        />
+            <nav className="nova-nav">
+                <div className="nova-nav-left">
+                    <Link to="/" className="nova-logo">
+                        <div className="nova-logo-icon">💊</div>
+                        TenaMed
                     </Link>
-
-                    {/* Desktop Nav */}
-                    <nav className="hidden md:flex items-center space-x-8">
+                    <div className="nova-nav-links hidden md:flex">
                         {navItems.map((item) => (
-                            <Link key={item.to} to={item.to} className="text-gray-600 hover:text-emerald-600 font-medium transition">
+                            <Link 
+                                key={item.to} 
+                                to={item.to} 
+                                className={`nova-nav-link ${location.pathname === item.to ? 'active' : ''}`}
+                            >
                                 {item.label}
                             </Link>
                         ))}
-                    </nav>
-
-                    {/* Actions */}
-                    <div className="flex items-center space-x-4">
-                        <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-1.5 focus-within:ring-2 focus-within:ring-emerald-100 transition">
-                            <Search className="w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-32 focus:w-48 transition-all"
-                            />
-                        </div>
-
-                        {roleKey === 'customer' && (
-                            <Link to="/cart" onClick={refreshCart} className="relative p-2 hover:bg-gray-100 rounded-full transition group">
-                                <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-emerald-600" />
-                                {getCartCount() > 0 && (
-                                    <span className="absolute top-0 right-0 w-4 h-4 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                                        {getCartCount()}
-                                    </span>
-                                )}
-                            </Link>
-                        )}
-
-                        {isAuthenticated ? (
-                            <div className="hidden md:flex items-center gap-2">
-                                <Link to="/profile" className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-full transition">
-                                    <User className="w-5 h-5 text-gray-600" />
-                                </Link>
-                                <button onClick={logout} className="bg-gray-900 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-black transition">
-                                    Sign Out
-                                </button>
-                            </div>
-                        ) : (
-                            <Link to="/login" className="hidden md:flex items-center space-x-2 bg-emerald-600 text-white px-5 py-2 rounded-full hover:bg-emerald-700 transition shadow-md hover:shadow-lg">
-                                <span>Sign In</span>
-                            </Link>
-                        )}
-
-                        <button
-                            type="button"
-                            className="md:hidden p-2"
-                            aria-label="Toggle mobile menu"
-                            aria-expanded={mobileMenuOpen}
-                            onClick={() => setMobileMenuOpen((prev) => !prev)}
-                        >
-                            {mobileMenuOpen ? (
-                                <X className="w-6 h-6 text-gray-600" />
-                            ) : (
-                                <Menu className="w-6 h-6 text-gray-600" />
-                            )}
-                        </button>
                     </div>
                 </div>
-                {mobileMenuOpen && (
-                    <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
-                        <div className="flex items-center bg-gray-100 rounded-full px-4 py-2 focus-within:ring-2 focus-within:ring-emerald-100 transition">
-                            <Search className="w-4 h-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="bg-transparent border-none focus:ring-0 text-sm ml-2 w-full"
-                            />
-                        </div>
 
+                <div className="nova-nav-right">
+                    {/* Theme Toggle */}
+                    <div className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+                        <span className="toggle-label" id="theme-label">{isDark ? 'DARK' : 'LIGHT'}</span>
+                        <div className="toggle-track">
+                            <div className="toggle-knob" id="toggle-knob">
+                                <span id="theme-icon">{isDark ? '🌙' : '☀️'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {isAuthenticated && (
+                       <Link to="/profile" className="nova-icon-btn hidden md:flex" title="Profile">
+                           <User className="w-4 h-4" />
+                       </Link>
+                    )}
+
+                    {roleKey === 'customer' && (
+                        <Link to="/cart" onClick={refreshCart} className="nova-cart-btn">
+                            <span>🛒</span>
+                            <span className="hidden sm:inline">Cart</span>
+                            <div className={`nova-cart-count ${getCartCount() > 0 ? 'bump' : ''}`} id="cart-count">
+                                {getCartCount()}
+                            </div>
+                        </Link>
+                    )}
+                    
+                    {isAuthenticated ? (
+                       <button onClick={logout} className="nova-icon-btn hidden md:flex" title="Sign Out" style={{ fontSize: '0.8rem' }}>
+                           <X className="w-5 h-5" />
+                       </button>
+                    ) : (
+                       <Link to="/login" className="nova-icon-btn flex items-center justify-center whitespace-nowrap px-3 text-xs" style={{ width: 'auto' }}>
+                           Sign In
+                       </Link>
+                    )}
+
+                    <button
+                        type="button"
+                        className="nova-icon-btn md:hidden"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                        {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
+                </div>
+
+                {mobileMenuOpen && (
+                    <div className="absolute top-[68px] left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-4 space-y-3 z-50 md:hidden shadow-lg" style={{ background: 'var(--nav-bg)' }}>
                         <nav className="flex flex-col gap-1">
                             {navItems.map((item) => (
                                 <Link
                                     key={item.to}
                                     to={item.to}
-                                    className="text-gray-700 hover:text-emerald-600 hover:bg-gray-50 px-3 py-2 rounded-lg font-medium transition"
+                                    className="nova-nav-link text-center border border-[var(--border)] mt-2"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
                                     {item.label}
                                 </Link>
                             ))}
-                        </nav>
-
-                        {roleKey === 'customer' && (
-                            <Link
-                                to="/cart"
-                                className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 transition"
-                                onClick={() => {
-                                    refreshCart();
-                                    setMobileMenuOpen(false);
-                                }}
-                            >
-                                <span className="font-medium">Cart</span>
-                                <span className="inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-full bg-red-500 text-white text-xs font-bold">
-                                    {getCartCount()}
-                                </span>
-                            </Link>
-                        )}
-
-                        {isAuthenticated ? (
-                            <div className="space-y-2 pt-2 border-t border-gray-100">
+                            {isAuthenticated && (
                                 <Link
                                     to="/profile"
-                                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition"
+                                    className="nova-nav-link text-center border border-[var(--border)] mt-2"
                                     onClick={() => setMobileMenuOpen(false)}
                                 >
-                                    <User className="w-5 h-5 text-gray-600" />
-                                    <span className="font-medium">Profile</span>
+                                    My Profile
                                 </Link>
+                            )}
+                            {isAuthenticated && (
                                 <button
-                                    type="button"
                                     onClick={() => {
                                         logout();
                                         setMobileMenuOpen(false);
                                     }}
-                                    className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black transition"
+                                    className="nova-nav-link text-center border border-[var(--danger)] text-[var(--danger)] mt-2 bg-[rgba(255,79,106,0.1)] hover:bg-[rgba(255,79,106,0.2)]"
                                 >
                                     Sign Out
                                 </button>
-                            </div>
-                        ) : (
-                            <Link
-                                to="/login"
-                                className="flex items-center justify-center bg-emerald-600 text-white px-5 py-2 rounded-lg hover:bg-emerald-700 transition shadow-md"
-                                onClick={() => setMobileMenuOpen(false)}
-                            >
-                                Sign In
-                            </Link>
-                        )}
+                            )}
+                        </nav>
                     </div>
                 )}
-            </header>
+            </nav>
 
             {/* Main Content */}
             <main className="flex-grow">
@@ -206,42 +185,39 @@ const MainLayout = () => {
 
             {/* Footer */}
             {shouldShowFooter && (
-                <footer className="bg-gray-900 text-gray-300 py-12">
+                <footer className="bg-[var(--surface)] text-[var(--text2)] py-12 border-t border-[var(--border)] mt-auto">
                     <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
                         <div>
                             <div className="flex items-center gap-2 mb-4">
-                                <img
-                                    src={tenaMedLogo}
-                                    alt="TenaMed"
-                                    className="h-80 w-auto"
-                                />
+                                <span style={{ fontSize: '1.5rem' }}>💊</span>
+                                <span className="font-bold text-[var(--text)] text-xl tracking-tight">TenaMed</span>
                             </div>
-                            <p className="text-sm text-gray-400">Your trusted online pharmacy partner. Quality healthcare delivered to your doorstep.</p>
+                            <p className="text-sm font-light leading-relaxed">Your trusted online pharmacy partner. Quality healthcare delivered to your doorstep.</p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><Link to="/products" className="hover:text-white transition">Buy Medicines</Link></li>
-                                <li><Link to="/upload-prescription" className="hover:text-white transition">Upload Prescription</Link></li>
-                                <li><Link to="/pharmacies" className="hover:text-white transition">Find Pharmacies</Link></li>
+                            <h4 className="text-[var(--text)] font-semibold mb-4">Quick Links</h4>
+                            <ul className="space-y-2 text-sm font-light">
+                                <li><Link to="/products" className="hover:text-[var(--accent)] transition-colors">Buy Medicines</Link></li>
+                                <li><Link to="/upload-prescription" className="hover:text-[var(--accent)] transition-colors">Upload Prescription</Link></li>
+                                <li><Link to="/pharmacies" className="hover:text-[var(--accent)] transition-colors">Find Pharmacies</Link></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Support</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><span className="hover:text-white transition">Contact Us</span></li>
-                                <li><span className="hover:text-white transition">FAQs</span></li>
-                                <li><span className="hover:text-white transition">Terms of Service</span></li>
+                            <h4 className="text-[var(--text)] font-semibold mb-4">Support</h4>
+                            <ul className="space-y-2 text-sm font-light">
+                                <li><span className="hover:text-[var(--accent)] transition-colors cursor-pointer">Contact Us</span></li>
+                                <li><span className="hover:text-[var(--accent)] transition-colors cursor-pointer">FAQs</span></li>
+                                <li><span className="hover:text-[var(--accent)] transition-colors cursor-pointer">Terms of Service</span></li>
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4">Contact</h4>
-                            <p className="text-sm">support@tenamed.com</p>
-                            <p className="text-sm">+251 911 000 000</p>
-                            {isAuthenticated && <p className="text-xs text-gray-500 mt-2">Signed in as {userEmail}</p>}
+                            <h4 className="text-[var(--text)] font-semibold mb-4">Contact</h4>
+                            <p className="text-sm font-light">support@tenamed.com</p>
+                            <p className="text-sm font-light">+251 911 000 000</p>
+                            {isAuthenticated && <p className="text-xs text-[var(--text3)] mt-2">Signed in as <span className="text-[var(--text)]">{userEmail}</span></p>}
                         </div>
                     </div>
-                    <div className="container mx-auto px-4 mt-8 pt-8 border-t border-gray-800 text-center text-xs text-gray-500">
+                    <div className="container mx-auto px-4 mt-8 pt-8 border-t border-[var(--border2)] text-center text-xs text-[var(--text3)] font-light">
                         © {new Date().getFullYear()} TenaMed. All rights reserved.
                     </div>
                 </footer>

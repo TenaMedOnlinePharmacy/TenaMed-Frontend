@@ -149,19 +149,19 @@ const DoctorInviteRegisterPage = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl w-full space-y-8 bg-white p-10 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100">
+        <div className="min-h-[calc(100vh-4.25rem)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10 transition-colors">
+            <div className="nova-card max-w-2xl w-full p-10 space-y-8 animate-in fade-in slide-in-from-bottom-2">
                 <div className="text-center">
-                    <h2 className="text-3xl font-bold text-gray-900 tracking-tight">Doctor Invitation Registration</h2>
-                    <p className="mt-2 text-sm text-gray-600">Complete your doctor account setup from invitation.</p>
+                    <h2 className="font-syne text-3xl md:text-3xl font-bold text-[var(--text)] tracking-tight">Doctor Invitation Registration</h2>
+                    <p className="mt-2 text-sm text-[var(--text2)] font-light">Complete your doctor account setup from invitation.</p>
                 </div>
 
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                <div className="rounded-xl border border-[rgba(var(--accent-rgb),0.3)] bg-[rgba(var(--accent-rgb),0.1)] px-4 py-3 text-sm text-[var(--accent)]">
                     Invitation mode: email is prefilled from your invitation token.
                 </div>
 
                 {inviteStatus === 'loading' && (
-                    <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                    <div className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-500">
                         Validating invitation token...
                     </div>
                 )}
@@ -170,25 +170,25 @@ const DoctorInviteRegisterPage = () => {
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                <label htmlFor="firstName" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">First Name</label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <User className="h-5 w-5 text-gray-400" />
+                                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                        <User className="h-5 w-5 text-[var(--accent)]" />
                                     </div>
-                                    <input id="firstName" name="firstName" type="text" required className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" value={formData.firstName} onChange={handleChange} />
+                                    <input id="firstName" name="firstName" type="text" required className="block w-full pl-11 pr-3 py-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.firstName} onChange={handleChange} />
                                 </div>
                             </div>
                             <div>
-                                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                <input id="lastName" name="lastName" type="text" required className="w-full p-3 border border-gray-300 rounded-lg" value={formData.lastName} onChange={handleChange} />
+                                <label htmlFor="lastName" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Last Name</label>
+                                <input id="lastName" name="lastName" type="text" required className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.lastName} onChange={handleChange} />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+                            <label htmlFor="email" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Email address</label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-gray-400" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <Mail className="h-5 w-5 text-[var(--accent)]" />
                                 </div>
                                 <input
                                     id="email"
@@ -196,7 +196,7 @@ const DoctorInviteRegisterPage = () => {
                                     type="email"
                                     required
                                     disabled
-                                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:text-gray-500"
+                                    className="block w-full pl-11 pr-3 py-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text2)] rounded-xl cursor-not-allowed opacity-70"
                                     value={formData.email}
                                     onChange={handleChange}
                                 />
@@ -204,56 +204,56 @@ const DoctorInviteRegisterPage = () => {
                         </div>
 
                         <div>
-                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                            <input id="phone" name="phone" type="tel" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.phone} onChange={handleChange} placeholder="+251 9..." />
+                            <label htmlFor="phone" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Phone Number</label>
+                            <input id="phone" name="phone" type="tel" className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] placeholder-[var(--text3)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.phone} onChange={handleChange} placeholder="+251 9..." />
                         </div>
 
                         <div>
-                            <label htmlFor="addressLine1" className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                            <input id="addressLine1" name="addressLine1" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.addressLine1} onChange={handleChange} placeholder="Street and building" />
+                            <label htmlFor="addressLine1" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Address</label>
+                            <input id="addressLine1" name="addressLine1" type="text" className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] placeholder-[var(--text3)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.addressLine1} onChange={handleChange} placeholder="Street and building" />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label htmlFor="licenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                                <input id="licenseNumber" name="licenseNumber" type="text" required className="w-full p-3 border border-gray-300 rounded-lg" value={formData.licenseNumber} onChange={handleChange} />
+                                <label htmlFor="licenseNumber" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">License Number</label>
+                                <input id="licenseNumber" name="licenseNumber" type="text" required className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.licenseNumber} onChange={handleChange} />
                             </div>
                             <div>
-                                <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
-                                <input id="specialization" name="specialization" type="text" className="w-full p-3 border border-gray-300 rounded-lg" value={formData.specialization} onChange={handleChange} />
+                                <label htmlFor="specialization" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Specialization</label>
+                                <input id="specialization" name="specialization" type="text" className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.specialization} onChange={handleChange} />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <label htmlFor="password" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Password</label>
                             <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-gray-400" />
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <Lock className="h-5 w-5 text-[var(--accent)]" />
                                 </div>
-                                <input id="password" name="password" type="password" required minLength={8} className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg" value={formData.password} onChange={handleChange} />
+                                <input id="password" name="password" type="password" required minLength={8} className="block w-full pl-11 pr-3 py-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.password} onChange={handleChange} />
                             </div>
                         </div>
 
                         <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                            <input id="confirmPassword" name="confirmPassword" type="password" required minLength={8} className="w-full p-3 border border-gray-300 rounded-lg" value={formData.confirmPassword} onChange={handleChange} />
+                            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-[var(--text2)] mb-1.5">Confirm Password</label>
+                            <input id="confirmPassword" name="confirmPassword" type="password" required minLength={8} className="w-full p-3.5 bg-[var(--surface2)] border border-[var(--border2)] text-[var(--text)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent)] transition-colors" value={formData.confirmPassword} onChange={handleChange} />
                         </div>
                     </div>
 
-                    {errorMsg && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{errorMsg}</div>}
+                    {errorMsg && <div className="rounded-xl border border-[var(--danger-border)] bg-[rgba(var(--danger-rgb),0.1)] px-4 py-3 text-sm text-[var(--danger)]">{errorMsg}</div>}
 
                     <button
                         type="submit"
                         disabled={status === 'loading' || inviteStatus !== 'ready'}
-                        className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-semibold rounded-lg text-white transition-all shadow-md hover:shadow-lg ${status === 'loading' || inviteStatus !== 'ready' ? 'bg-emerald-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+                        className={`btn-primary w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 group ${status === 'loading' || inviteStatus !== 'ready' ? 'opacity-60 cursor-not-allowed' : ''}`}
                     >
                         {status === 'loading' ? 'Creating doctor account...' : 'Create Doctor Account'}
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </form>
 
-                <div className="text-center text-sm text-gray-600">
-                    Already registered? <Link to="/login?role=doctor" className="font-medium text-emerald-600 hover:text-emerald-500">Sign in as Doctor</Link>
+                <div className="text-center text-sm text-[var(--text2)]">
+                    Already registered? <Link to="/login?role=doctor" className="font-semibold text-[var(--accent)] hover:underline">Sign in as Doctor</Link>
                 </div>
             </div>
         </div>

@@ -146,19 +146,19 @@ const ProductDetailsPage = () => {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-                <p className="text-gray-500">Loading medicine details...</p>
+            <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+                <p className="text-[var(--text3)] font-medium animate-pulse">Loading medicine details...</p>
             </div>
         );
     }
 
     if (!product) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
                 <div className="text-center">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Product Not Found</h2>
-                    <p className="text-gray-600 mb-6">The medicine you are looking for does not exist or has been removed.</p>
-                    <Link to="/products" className="inline-flex items-center text-emerald-600 hover:text-emerald-700 font-medium">
+                    <h2 className="text-2xl font-bold text-[var(--text)] mb-2">Product Not Found</h2>
+                    <p className="text-[var(--text2)] mb-6">The medicine you are looking for does not exist or has been removed.</p>
+                    <Link to="/products" className="inline-flex items-center text-[var(--accent)] hover:text-[var(--accent-hover)] font-medium transition-colors">
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Back to Medicines
                     </Link>
@@ -168,90 +168,93 @@ const ProductDetailsPage = () => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen py-8">
-            <div className="container mx-auto px-4">
+        <div className="bg-transparent min-h-screen py-8">
+            <div className="nova-main max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Breadcrumb */}
-                <nav className="flex items-center text-sm text-gray-500 mb-8">
-                    <Link to="/" className="hover:text-emerald-600">Home</Link>
+                <nav className="flex items-center text-sm text-[var(--text3)] mb-8">
+                    <Link to="/" className="hover:text-[var(--accent)] transition-colors">Home</Link>
                     <span className="mx-2">/</span>
-                    <Link to="/products" className="hover:text-emerald-600">Medicines</Link>
+                    <Link to="/products" className="hover:text-[var(--accent)] transition-colors">Medicines</Link>
                     <span className="mx-2">/</span>
-                    <span className="text-gray-900 font-medium truncate">{product.name}</span>
+                    <span className="text-[var(--text)] font-medium truncate">{product.name}</span>
                 </nav>
 
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-lg">
                     <div className="flex flex-col md:flex-row">
                         {/* Image Section */}
-                        <div className="md:w-1/2 p-4 md:p-8 bg-gray-50 flex items-center justify-center">
-                            <div className="relative w-full max-w-sm aspect-square bg-white rounded-xl shadow-sm p-4 overflow-hidden border border-gray-100">
+                        <div className="md:w-1/2 p-4 md:p-8 flex items-center justify-center bg-[var(--surface2)] relative">
+                            {/* Glow effect behind image */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-[var(--accent-rgb)] opacity-10 blur-3xl rounded-full"></div>
+                            
+                            <div className="relative w-full max-w-md aspect-square bg-[var(--bg)] rounded-xl shadow-[var(--glow)] p-6 overflow-hidden border border-[var(--border2)]">
                                 <img
                                     src={product.image}
                                     alt={product.name}
                                     onError={(event) => {
                                         event.currentTarget.src = FALLBACK_MEDICINE_IMAGE;
                                     }}
-                                    className="w-full h-full object-contain"
+                                    className="w-full h-full object-contain relative z-10 filter drop-shadow-md"
                                 />
                             </div>
                         </div>
 
                         {/* Details Section */}
-                        <div className="md:w-1/2 p-6 md:p-10 flex flex-col">
+                        <div className="md:w-1/2 p-6 md:p-10 flex flex-col z-10 bg-[var(--surface)]">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">{product.category}</span>
+                                        <span className="nova-badge nova-badge-otc" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>{product.category}</span>
                                         {product.prescriptionRequired && (
-                                            <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-800">
+                                            <span className="nova-badge nova-badge-rx" style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}>
                                                 Prescription Required
                                             </span>
                                         )}
                                     </div>
-                                    <h1 className="text-3xl font-bold text-gray-900 mt-4">{product.name}</h1>
+                                    <h1 className="text-3xl lg:text-4xl font-bold text-[var(--text)] mt-4 tracking-tight">{product.name}</h1>
                                     {product.genericName && (
-                                        <p className="text-sm text-gray-500 mt-2">
-                                            Generic name: <span className="font-medium text-gray-700">{product.genericName}</span>
+                                        <p className="text-sm text-[var(--text3)] mt-2">
+                                            Generic name: <span className="font-medium text-[var(--text2)]">{product.genericName}</span>
                                         </p>
                                     )}
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        Sold by <span className="font-semibold text-emerald-600">{product.pharmacy}</span>
+                                    <p className="text-sm text-[var(--text3)] mt-2">
+                                        Sold by <span className="font-semibold text-[var(--accent)]">{product.pharmacy}</span>
                                     </p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button className="p-2 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition">
+                                    <button className="p-2 text-[var(--text3)] hover:text-red-500 rounded-full hover:bg-[var(--surface2)] transition">
                                         <Heart className="w-6 h-6" />
                                     </button>
-                                    <button className="p-2 text-gray-400 hover:text-emerald-600 rounded-full hover:bg-gray-100 transition">
+                                    <button className="p-2 text-[var(--text3)] hover:text-[var(--accent)] rounded-full hover:bg-[var(--surface2)] transition">
                                         <Share2 className="w-6 h-6" />
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="mt-6 border-t border-b border-gray-100 py-6">
+                            <div className="mt-8 border-t border-b border-[var(--border2)] py-6">
                                 <div className="flex items-end gap-4 mb-6">
-                                    <span className="text-4xl font-bold text-gray-900">${product.price.toFixed(2)}</span>
-                                    <span className="text-green-600 font-medium mb-1">In Stock</span>
+                                    <span className="text-4xl font-bold text-[var(--text)]">${product.price.toFixed(2)}</span>
+                                    <span className="text-[var(--accent2)] font-medium mb-1 flex items-center gap-1"><ShieldCheck className="w-4 h-4"/> In Stock</span>
                                 </div>
 
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <div className="flex items-center border border-gray-300 rounded-lg w-max">
+                                <div className="flex flex-col xl:flex-row gap-4">
+                                    <div className="flex items-center border border-[var(--border2)] bg-[var(--bg)] rounded-lg w-max">
                                         <button
                                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                                            className="px-4 py-3 text-gray-600 hover:bg-gray-50 transition border-r border-gray-300"
+                                            className="px-4 py-3 text-[var(--text2)] hover:text-[var(--accent)] hover:bg-[var(--surface2)] transition border-r border-[var(--border2)]"
                                         >
                                             -
                                         </button>
-                                        <span className="px-6 py-3 font-semibold text-gray-900 w-16 text-center">{quantity}</span>
+                                        <span className="px-6 py-3 font-semibold text-[var(--text)] w-16 text-center">{quantity}</span>
                                         <button
                                             onClick={() => setQuantity(quantity + 1)}
-                                            className="px-4 py-3 text-gray-600 hover:bg-gray-50 transition border-l border-gray-300"
+                                            className="px-4 py-3 text-[var(--text2)] hover:text-[var(--accent)] hover:bg-[var(--surface2)] transition border-l border-[var(--border2)]"
                                         >
                                             +
                                         </button>
                                     </div>
                                     <button
                                         onClick={handleAddToCart}
-                                        className="flex-1 bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 active:bg-emerald-800 transition flex items-center justify-center gap-2 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="flex-1 btn-primary py-3 rounded-lg flex items-center justify-center gap-2 shadow-[var(--glow)] disabled:opacity-50 disabled:cursor-not-allowed text-base"
                                         disabled={!product.inStock}
                                     >
                                         <ShoppingCart className="w-5 h-5" />
@@ -262,48 +265,48 @@ const ProductDetailsPage = () => {
 
                             {/* Description & Features */}
                             <div className="mt-8">
-                                <h3 className="text-lg font-bold text-gray-900 mb-3">Product Description</h3>
-                                <p className="text-gray-600 leading-relaxed mb-6">
+                                <h3 className="text-lg font-semibold text-[var(--text)] mb-3 tracking-tight">Product Description</h3>
+                                <p className="text-[var(--text2)] leading-relaxed mb-6 font-light text-sm">
                                     {product.description}
                                 </p>
 
                                 {product.indications && (
-                                    <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                                        <span className="font-semibold">Indications: </span>
+                                    <div className="mb-4 rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-4 py-3 text-sm text-[var(--text2)] font-light">
+                                        <span className="font-semibold text-[var(--accent2)]">Indications: </span>
                                         {product.indications}
                                     </div>
                                 )}
 
                                 {(product.contraindications || product.sideEffects) && (
-                                    <div className="mb-6 space-y-3 text-sm">
+                                    <div className="mb-6 space-y-3 text-sm font-light">
                                         {product.contraindications && (
-                                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
-                                                <span className="font-semibold">Contraindications: </span>
+                                            <div className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-4 py-3 text-[var(--text2)]">
+                                                <span className="font-semibold text-amber-500">Contraindications: </span>
                                                 {product.contraindications}
                                             </div>
                                         )}
                                         {product.sideEffects && (
-                                            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-800">
-                                                <span className="font-semibold">Side Effects: </span>
+                                            <div className="rounded-lg border border-[var(--danger-border)] bg-[rgba(var(--danger-rgb),0.05)] px-4 py-3 text-[var(--text)]">
+                                                <span className="font-semibold text-[var(--danger)]">Side Effects: </span>
                                                 {product.sideEffects}
                                             </div>
                                         )}
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                        <Truck className="w-6 h-6 text-emerald-600" />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+                                    <div className="flex items-center gap-3 p-3 bg-[var(--surface2)] border border-[var(--border)] rounded-lg">
+                                        <Truck className="w-5 h-5 text-[var(--accent)]" />
                                         <div>
-                                            <p className="text-xs text-gray-500">Delivery</p>
-                                            <p className="text-sm font-semibold text-gray-900">Estimated 2-4 hours</p>
+                                            <p className="text-xs text-[var(--text3)]">Delivery</p>
+                                            <p className="text-sm font-medium text-[var(--text)]">Estimated 2-4 hours</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                        <ShieldCheck className="w-6 h-6 text-green-600" />
+                                    <div className="flex items-center gap-3 p-3 bg-[var(--surface2)] border border-[var(--border)] rounded-lg">
+                                        <ShieldCheck className="w-5 h-5 text-[var(--accent2)]" />
                                         <div>
-                                            <p className="text-xs text-gray-500">Guarantee</p>
-                                            <p className="text-sm font-semibold text-gray-900">100% Genuine</p>
+                                            <p className="text-xs text-[var(--text3)]">Guarantee</p>
+                                            <p className="text-sm font-medium text-[var(--text)]">100% Genuine</p>
                                         </div>
                                     </div>
                                 </div>

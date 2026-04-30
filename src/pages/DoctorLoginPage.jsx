@@ -123,40 +123,40 @@ const DoctorLoginPage = () => {
     };
 
     return (
-        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 px-4 py-12">
-            <div className="max-w-md w-full bg-white rounded-2xl border border-gray-100 shadow-sm p-8 space-y-6">
+        <div className="min-h-[calc(100vh-4.25rem)] flex items-center justify-center bg-transparent px-4 py-12 relative z-10 transition-colors">
+            <div className="max-w-md w-full bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-[var(--shadow)] p-8 space-y-6 backdrop-blur-xl">
                 <div className="text-center">
-                    <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                        <ShieldCheck className="w-6 h-6" />
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-[rgba(var(--accent-rgb),0.1)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.2)] flex items-center justify-center mb-5 shadow-[var(--glow)]">
+                        <ShieldCheck className="w-7 h-7" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Doctor Secure Login</h1>
-                    <p className="text-sm text-gray-500 mt-1">Strict authentication required before patient access.</p>
+                    <h1 className="text-2xl md:text-3xl font-bold font-syne text-[var(--text)] tracking-tight">Doctor Secure Login</h1>
+                    <p className="text-sm text-[var(--text2)] font-light mt-2">Strict authentication required before patient access.</p>
                 </div>
 
                 {step === 1 ? (
                     <form onSubmit={submitCredentials} className="space-y-4">
-                        <input type="email" value={email} onChange={handleEmailChange} placeholder="doctor@hospital.org" className="w-full p-3 border border-gray-300 rounded-lg" required />
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full p-3 border border-gray-300 rounded-lg" required />
+                        <input type="email" value={email} onChange={handleEmailChange} placeholder="doctor@hospital.org" className="w-full p-3.5 bg-[var(--bg)] border border-[var(--border2)] outline-none rounded-xl text-[var(--text)] placeholder-[var(--text3)] focus:ring-2 focus:ring-[var(--accent)] transition-colors" required />
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="w-full p-3.5 bg-[var(--bg)] border border-[var(--border2)] outline-none rounded-xl text-[var(--text)] placeholder-[var(--text3)] focus:ring-2 focus:ring-[var(--accent)] transition-colors" required />
                         <button
                             disabled={isSendingOtp}
-                            className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                            className={`btn-primary w-full py-3.5 text-base rounded-xl ${isSendingOtp ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {isSendingOtp ? 'Sending OTP...' : 'Continue to OTP'}
                         </button>
                     </form>
                 ) : (
-                    <form onSubmit={submitOtp} className="space-y-4">
-                        <input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" className="w-full p-3 border border-gray-300 rounded-lg" required />
+                    <form onSubmit={submitOtp} className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
+                        <input value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="6-digit OTP" className="w-full p-3.5 bg-[var(--bg)] border border-[var(--border2)] outline-none rounded-xl text-[var(--text)] placeholder-[var(--text3)] focus:ring-2 focus:ring-[var(--accent)] transition-colors tracking-widest text-center text-lg" required />
                         <button
                             disabled={isVerifyingOtp}
-                            className="w-full bg-emerald-600 text-white py-3 rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                            className={`btn-primary w-full py-3.5 text-base rounded-xl ${isVerifyingOtp ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
                             {isVerifyingOtp ? 'Verifying...' : 'Verify and Sign In'}
                         </button>
                     </form>
                 )}
 
-                {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+                {error && <div className="text-sm text-[var(--danger)] bg-[rgba(var(--danger-rgb),0.1)] border border-[var(--danger-border)] rounded-lg px-4 py-3">{error}</div>}
             </div>
         </div>
     );

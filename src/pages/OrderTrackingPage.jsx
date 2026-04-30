@@ -3,11 +3,11 @@ import { Clock, Search, CheckCircle, Truck } from 'lucide-react';
 import { getOrders } from '../data/orderStore';
 
 const statusClassMap = {
-    Pending: 'bg-yellow-100 text-yellow-700',
-    Accepted: 'bg-emerald-100 text-emerald-700',
-    Dispatched: 'bg-indigo-100 text-indigo-700',
-    Delivered: 'bg-green-100 text-green-700',
-    Rejected: 'bg-red-100 text-red-700',
+    Pending: 'bg-[rgba(234,179,8,0.1)] text-yellow-500 border border-[rgba(234,179,8,0.2)]',
+    Accepted: 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border border-[rgba(16,185,129,0.2)]',
+    Dispatched: 'bg-[rgba(139,92,246,0.1)] text-purple-500 border border-[rgba(139,92,246,0.2)]',
+    Delivered: 'bg-[rgba(34,197,94,0.1)] text-green-500 border border-[rgba(34,197,94,0.2)]',
+    Rejected: 'bg-[rgba(var(--danger-rgb),0.1)] text-[var(--danger)] border border-[var(--danger-border)]',
 };
 
 const statusIcon = {
@@ -32,47 +32,47 @@ const OrderTrackingPage = () => {
     });
 
     return (
-        <div className="bg-gray-50 min-h-screen py-10">
-            <div className="container mx-auto px-4">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900">Order Tracking & History</h1>
-                    <p className="text-gray-500 mt-1">Track ongoing orders and browse completed purchases.</p>
+        <div className="bg-transparent min-h-[calc(100vh-4.25rem)] py-12 relative z-10 transition-colors">
+            <div className="nova-main max-w-5xl">
+                <div className="mb-8">
+                    <h1 className="font-syne text-3xl md:text-4xl font-bold text-[var(--text)] tracking-tight">Order Tracking & History</h1>
+                    <p className="text-[var(--text2)] font-light mt-2">Track ongoing orders and browse completed purchases.</p>
                 </div>
 
-                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="p-5 border-b border-gray-100 flex items-center justify-between gap-3">
-                        <h2 className="font-semibold text-gray-900">My Orders</h2>
-                        <div className="relative w-full max-w-xs">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2">
+                    <div className="p-5 border-b border-[var(--border2)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h2 className="font-syne font-semibold text-lg text-[var(--text)] tracking-tight">My Orders</h2>
+                        <div className="relative w-full sm:max-w-xs">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text3)]" />
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search by order ID, status..."
-                                className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-emerald-500"
+                                className="w-full pl-9 pr-3 py-2 bg-[var(--bg)] border border-[var(--border2)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors placeholder-[var(--text3)]"
                             />
                         </div>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-left">
-                            <thead className="bg-gray-50 text-gray-500 text-sm">
+                            <thead className="bg-[var(--surface2)] text-[var(--text2)] text-sm">
                                 <tr>
-                                    <th className="p-4 font-medium">Order ID</th>
-                                    <th className="p-4 font-medium">Date</th>
-                                    <th className="p-4 font-medium">Items</th>
-                                    <th className="p-4 font-medium">Total</th>
-                                    <th className="p-4 font-medium">Status</th>
+                                    <th className="p-4 font-medium tracking-wide">Order ID</th>
+                                    <th className="p-4 font-medium tracking-wide">Date</th>
+                                    <th className="p-4 font-medium tracking-wide">Items</th>
+                                    <th className="p-4 font-medium tracking-wide">Total</th>
+                                    <th className="p-4 font-medium tracking-wide">Status</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-[var(--border2)]">
                                 {filtered.map((order) => (
-                                    <tr key={order.id} className="hover:bg-gray-50">
-                                        <td className="p-4 font-semibold text-emerald-600">{order.id}</td>
-                                        <td className="p-4 text-gray-600">{order.date}</td>
-                                        <td className="p-4 text-gray-600">{order.items.length} items</td>
-                                        <td className="p-4 font-medium text-gray-900">${order.total.toFixed(2)}</td>
+                                    <tr key={order.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors">
+                                        <td className="p-4 font-mono font-semibold text-[var(--accent)]">{order.id}</td>
+                                        <td className="p-4 text-[var(--text2)]">{order.date}</td>
+                                        <td className="p-4 text-[var(--text2)]">{order.items.length} items</td>
+                                        <td className="p-4 font-medium text-[var(--text)]">${order.total.toFixed(2)}</td>
                                         <td className="p-4">
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${statusClassMap[order.status] || 'bg-gray-100 text-gray-700'}`}>
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClassMap[order.status] || 'bg-[var(--surface2)] text-[var(--text)] border border-[var(--border2)]'}`}>
                                                 {statusIcon[order.status]}
                                                 {order.status}
                                             </span>

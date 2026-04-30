@@ -20,79 +20,77 @@ const AdminDashboard = () => {
     const [pharmacies] = useState(mockPharmacies);
 
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <div className="bg-white shadow-sm border-b border-gray-100">
-                <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="bg-transparent min-h-[calc(100vh-4.25rem)] py-12 relative z-10 transition-colors">
+            <div className="nova-main">
+                <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Admin Portal</h1>
-                        <p className="text-sm text-gray-500">System Overview</p>
+                        <h1 className="font-syne text-3xl md:text-3xl font-bold text-[var(--text)] tracking-tight">Admin Portal</h1>
+                        <p className="text-sm text-[var(--text2)] font-light mt-1">System Overview</p>
                     </div>
-                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                    <div className="flex bg-[var(--surface2)] p-1 rounded-xl border border-[var(--border2)]">
                         <button
                             onClick={() => setActiveTab('users')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${activeTab === 'users' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'users' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface3)]'}`}
                         >
                             <Users className="w-4 h-4" /> Users
                         </button>
                         <button
                             onClick={() => setActiveTab('pharmacies')}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition flex items-center gap-2 ${activeTab === 'pharmacies' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'pharmacies' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface3)]'}`}
                         >
                             <Building2 className="w-4 h-4" /> Pharmacies
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <div className="container mx-auto px-4 py-8">
-                <div className="mb-4">
-                    <Link to="/admin/medical-verification" className="inline-flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-black transition">
+                <div className="mb-6 flex">
+                    <Link to="/admin/medical-verification" className="inline-flex items-center gap-2 btn-secondary px-5 py-2.5 rounded-xl text-sm font-semibold transition">
                         Open Medical Verification Queue
                     </Link>
                 </div>
 
                 {activeTab === 'users' ? (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900">User Management</h2>
+                    <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2 relative z-0">
+                        <div className="p-6 border-b border-[var(--border2)] flex justify-between items-center bg-[var(--surface2)]">
+                            <h2 className="font-syne text-lg font-bold text-[var(--text)] tracking-tight">User Management</h2>
                             <div className="flex gap-4">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                    <input type="text" placeholder="Search users..." className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:border-emerald-500 transition" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text3)] w-4 h-4" />
+                                    <input type="text" placeholder="Search users..." className="pl-9 pr-4 py-2 bg-[var(--bg)] border border-[var(--border2)] text-[var(--text)] placeholder-[var(--text3)] rounded-lg text-sm outline-none focus:border-[var(--accent)] transition-colors" />
                                 </div>
-                                <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+                                <button className="btn-primary px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
                                     <Plus className="w-4 h-4" /> Add User
                                 </button>
                             </div>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-500 text-sm">
+                                <thead className="bg-[var(--surface2)] text-[var(--text2)] text-sm">
                                     <tr>
-                                        <th className="p-4 font-medium">Name</th>
-                                        <th className="p-4 font-medium">Email</th>
-                                        <th className="p-4 font-medium">Role</th>
-                                        <th className="p-4 font-medium">Status</th>
-                                        <th className="p-4 font-medium text-right">Actions</th>
+                                        <th className="p-4 font-medium tracking-wide">Name</th>
+                                        <th className="p-4 font-medium tracking-wide">Email</th>
+                                        <th className="p-4 font-medium tracking-wide">Role</th>
+                                        <th className="p-4 font-medium tracking-wide">Status</th>
+                                        <th className="p-4 font-medium tracking-wide text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-[var(--border2)]">
                                     {users.map(user => (
-                                        <tr key={user.id} className="hover:bg-gray-50 transition">
-                                            <td className="p-4 font-medium text-gray-900">{user.name}</td>
-                                            <td className="p-4 text-gray-600">{user.email}</td>
+                                        <tr key={user.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors text-sm border-b border-[var(--border2)]">
+                                            <td className="p-4 font-semibold text-[var(--text)]">{user.name}</td>
+                                            <td className="p-4 text-[var(--text2)]">{user.email}</td>
                                             <td className="p-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold capitalize ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
-                                                    user.role === 'pharmacist' ? 'bg-emerald-100 text-emerald-700' :
-                                                        'bg-green-100 text-green-700'
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize border ${user.role === 'admin' ? 'bg-[rgba(168,85,247,0.1)] text-purple-400 border-[rgba(168,85,247,0.2)]' :
+                                                    user.role === 'pharmacist' ? 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border-[rgba(16,185,129,0.2)]' :
+                                                        'bg-[rgba(59,130,246,0.1)] text-blue-500 border-[rgba(59,130,246,0.2)]'
                                                     }`}>
                                                     {user.role}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-sm text-green-600 font-medium">{user.status}</td>
+                                            <td className="p-4 text-emerald-500 font-semibold">{user.status}</td>
                                             <td className="p-4 text-right">
-                                                <button className="text-gray-400 hover:text-emerald-600 px-2 transition">Edit</button>
-                                                <button className="text-gray-400 hover:text-red-500 px-2 transition">Delete</button>
+                                                <button className="text-[var(--text3)] hover:text-[var(--accent)] px-2 transition font-semibold">Edit</button>
+                                                <button className="text-[var(--text3)] hover:text-[var(--danger)] px-2 transition font-semibold">Delete</button>
                                             </td>
                                         </tr>
                                     ))}
@@ -101,40 +99,40 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h2 className="text-lg font-bold text-gray-900">Pharmacy Management</h2>
-                            <button className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition flex items-center gap-2">
+                    <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2 relative z-0">
+                        <div className="p-6 border-b border-[var(--border2)] flex justify-between items-center bg-[var(--surface2)]">
+                            <h2 className="font-syne text-lg font-bold text-[var(--text)] tracking-tight">Pharmacy Management</h2>
+                            <button className="btn-primary px-4 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2">
                                 <Plus className="w-4 h-4" /> Register Pharmacy
                             </button>
                         </div>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-500 text-sm">
+                                <thead className="bg-[var(--surface2)] text-[var(--text2)] text-sm">
                                     <tr>
-                                        <th className="p-4 font-medium">Pharmacy Name</th>
-                                        <th className="p-4 font-medium">Owner</th>
-                                        <th className="p-4 font-medium">Contact</th>
-                                        <th className="p-4 font-medium">Status</th>
-                                        <th className="p-4 font-medium text-right">Actions</th>
+                                        <th className="p-4 font-medium tracking-wide">Pharmacy Name</th>
+                                        <th className="p-4 font-medium tracking-wide">Owner</th>
+                                        <th className="p-4 font-medium tracking-wide">Contact</th>
+                                        <th className="p-4 font-medium tracking-wide">Status</th>
+                                        <th className="p-4 font-medium tracking-wide text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-[var(--border2)]">
                                     {pharmacies.map(pharmacy => (
-                                        <tr key={pharmacy.id} className="hover:bg-gray-50 transition">
-                                            <td className="p-4 font-medium text-gray-900">{pharmacy.name}</td>
-                                            <td className="p-4 text-gray-600">{pharmacy.owner}</td>
-                                            <td className="p-4 text-gray-600 text-sm">{pharmacy.contact}</td>
+                                        <tr key={pharmacy.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors text-sm border-b border-[var(--border2)]">
+                                            <td className="p-4 font-semibold text-[var(--text)]">{pharmacy.name}</td>
+                                            <td className="p-4 text-[var(--text2)]">{pharmacy.owner}</td>
+                                            <td className="p-4 text-[var(--text2)]">{pharmacy.contact}</td>
                                             <td className="p-4">
-                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${pharmacy.status === 'Verified' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${pharmacy.status === 'Verified' ? 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border-[rgba(16,185,129,0.2)]' : 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20'
                                                     }`}>
                                                     {pharmacy.status}
                                                 </span>
                                             </td>
                                             <td className="p-4 text-right">
-                                                <button className="text-gray-400 hover:text-emerald-600 px-2 transition">Edit</button>
+                                                <button className="text-[var(--text3)] hover:text-[var(--accent)] px-2 transition font-semibold border-r border-[var(--border2)] mr-2 pr-4">Edit</button>
                                                 {pharmacy.status === 'Pending' && (
-                                                    <button className="text-emerald-600 hover:text-emerald-700 px-2 font-medium text-sm transition">Approve</button>
+                                                    <button className="text-emerald-500 hover:text-emerald-400 px-2 font-semibold transition">Approve</button>
                                                 )}
                                             </td>
                                         </tr>

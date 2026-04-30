@@ -196,6 +196,7 @@ export const invitationGetByToken = (token) => api.get(`/invitations/${token}`, 
 
 // Anti-doping
 export const antiDopingCheck = (payload) => api.post('/anti-doping/check', payload, buildAuthHeaders());
+export const antiDopingAthleteProfileExists = () => api.get('/anti-doping/athlete-profile/exists', buildAuthHeaders());
 
 // Hospitals
 export const hospitalCreate = (payload) => api.post('/hospitals/', payload, buildAuthHeaders());
@@ -203,6 +204,10 @@ export const hospitalGetById = (id) => api.get(`/hospitals/${id}`, buildAuthHead
 export const hospitalUpdate = (id, payload) => api.put(`/hospitals/${id}`, payload, buildAuthHeaders());
 export const hospitalVerify = (id) => api.patch(`/hospitals/${id}/verify`, null, buildAuthHeaders());
 export const hospitalGetDoctors = (id) => api.get(`/hospitals/${id}/doctors`, buildAuthHeaders());
+export const hospitalGetDoctorsManagement = () => api.get('/hospitals/doctors/management', buildAuthHeaders());
+export const hospitalAcceptDoctor = (doctorId) => api.patch(`/hospitals/doctors/${doctorId}/accept`, null, buildAuthHeaders());
+export const hospitalRejectDoctor = (doctorId) => api.patch(`/hospital/doctors/${doctorId}/reject`, null, buildAuthHeaders());
+export const hospitalGetStatistics = () => api.get('/hospitals/statistics', buildAuthHeaders());
 export const hospitalInviteDoctor = (idOrPayload, maybePayload) => {
     if (typeof idOrPayload === 'object' && idOrPayload !== null) {
         return api.post('/hospitals/invite-doctor', idOrPayload, buildAuthHeaders());
