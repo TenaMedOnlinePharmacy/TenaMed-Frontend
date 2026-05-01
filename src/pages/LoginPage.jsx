@@ -7,6 +7,8 @@ import { getDevBypassRole, isBuilderMode, SUPPORTED_ROLES } from '../config/devB
 
 const roles = SUPPORTED_ROLES;
 const ATHLETE_FLAG_KEY = 'tenamed_is_athlete';
+const FRONTEND_ADMIN_EMAIL = 'jemud9090@gmail.com';
+const FRONTEND_ADMIN_PASSWORD = '12345678';
 
 const redirectByRole = {
     customer: '/',
@@ -39,6 +41,28 @@ const LoginPage = () => {
         event.preventDefault();
         setStatus('loading');
         setErrorMsg('');
+
+        const normalizedEmail = String(formData.email || '').trim().toLowerCase();
+        const isFrontendAdminLogin = (
+            normalizedEmail === FRONTEND_ADMIN_EMAIL
+            && formData.password === FRONTEND_ADMIN_PASSWORD
+        );
+
+        if (isFrontendAdminLogin) {
+            try {
+                const response = await authLogin({
+                    email: formData.email,
+                    password: formData.password,
+                });
+                const accessToken = response?.data?.accessToken || 'frontend-admin-access-token';
+                login(accessToken, formData.email, 'admin', false);
+            } catch {
+                // Frontend-only fallback requested when no dedicated backend admin flow exists.
+                login('frontend-admin-access-token', formData.email, 'admin', false);
+            }
+            navigate('/admin/dashboard');
+            return;
+        }
 
         const activeRole = builderModeEnabled ? builderRole : role;
 

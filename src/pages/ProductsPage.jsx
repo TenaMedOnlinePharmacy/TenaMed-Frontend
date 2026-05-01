@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Search, Filter, ShoppingCart } from 'lucide-react';
-import { medicineGetAll, medicineSearch, prescriptionGetHospitalIssued } from '../api/axios';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Search, Filter, ShoppingCart, ShieldCheck } from 'lucide-react';
+import { medicineGetAll, medicineSearch, prescriptionGetHospitalIssued, antiDopingCheck } from '../api/axios';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const FALLBACK_MEDICINE_IMAGE = 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=60';
@@ -21,14 +22,14 @@ const getMedicineImageValue = (medicine) => (
 );
 
 const mapMedicineToProduct = (medicine, index) => {
-    const parsedPrice = Number(medicine?.price);
+    const parsedPrice = Number(medicine?.price ?? medicine?.doseValue);
     const hasValidPrice = Number.isFinite(parsedPrice) && parsedPrice >= 0;
     const brandName = medicine?.brandName || medicine?.brand || '';
-    const medicineName = medicine?.medicineName || medicine?.name || 'Unnamed medicine';
+    const medicineName = medicine?.medicineName || medicine?.name || medicine?.genericName || 'Unnamed medicine';
     const hasDistinctBrand = Boolean(brandName) && brandName !== medicineName;
     const displayName = hasDistinctBrand ? brandName : medicineName;
     const pharmacyName = medicine?.pharmacyLegalName || 'TenaMED Partner Pharmacy';
-    const category = medicine?.medicineCategory || medicine?.category || 'General';
+    const category = medicine?.medicineCategory || medicine?.category || medicine?.therapeuticClass || 'General';
     const productId = medicine?.productId || medicine?.medicineId || medicine?.id;
     const id = productId || `${displayName}-${pharmacyName}-${index}`;
     const routeId = productId || `name-${encodeURIComponent(displayName)}-${index}`;
@@ -45,19 +46,32 @@ const mapMedicineToProduct = (medicine, index) => {
         pharmacyId: medicine?.pharmacyId,
         name: displayName,
         brandName: hasDistinctBrand ? brandName : '',
-        genericName: hasDistinctBrand ? medicineName : '',
+        genericName: hasDistinctBrand ? medicineName : (medicine?.genericName || ''),
         category,
         pharmacy: pharmacyName,
         description: medicine?.indications || medicine?.dosageInstructions || 'No description available.',
         indications: medicine?.indications || '',
         contraindications: medicine?.contraindications || '',
         sideEffects: medicine?.sideEffects || '',
+        dosageInstructions: medicine?.dosageInstructions || '',
+        dosageForm: medicine?.dosageForm || medicine?.doseForm || '',
+        therapeuticClass: medicine?.therapeuticClass || '',
+        schedule: medicine?.schedule || '',
+        regulatoryCode: medicine?.regulatoryCode || '',
+        pregnancyCategory: medicine?.pregnancyCategory || '',
+        doseValue: medicine?.doseValue ?? null,
+        doseUnit: medicine?.doseUnit || '',
         prescriptionRequired: Boolean(medicine?.prescriptionRequired ?? medicine?.requiresPrescription),
-        price: hasValidPrice ? parsedPrice : null,
-        image: resolveApiImageUrl(getMedicineImageValue(medicine), FALLBACK_MEDICINE_IMAGE),
+        needManualReview: Boolean(medicine?.needManualReview),
+        availableQuantity: medicine?.availableQuantity ?? null,
         inStock,
+        image: resolveApiImageUrl(getMedicineImageValue(medicine), FALLBACK_MEDICINE_IMAGE),
+        allergenIds: Array.isArray(medicine?.allergenIds) ? medicine.allergenIds : [],
+        dopingRuleIds: Array.isArray(medicine?.dopingRuleIds) ? medicine.dopingRuleIds : [],
+        price: hasValidPrice ? parsedPrice : null,
     };
 };
+
 
 const mapMatchedPrescriptionToProduct = (medicine, index, prescriptionId) => {
     const mapped = mapMedicineToProduct(medicine, index);
@@ -81,8 +95,40 @@ const ProductsPage = () => {
     const [prescriptionError, setPrescriptionError] = useState('');
     const [isPrescriptionLoading, setIsPrescriptionLoading] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const { addToCart } = useCart();
+    const { isAthlete } = useAuth();
     const medicineSearchInputRef = useRef(null);
+
+    const [dopingCheckLoading, setDopingCheckLoading] = useState(null);
+    const [dopingCheckSafe, setDopingCheckSafe] = useState({});
+
+    const handleDopingCheck = async (e, product) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        setDopingCheckLoading(product.id);
+        try {
+            const response = await antiDopingCheck({ medicineName: product.name });
+            const result = response.data;
+            if (result.status === 'BANNED') {
+                navigate('/anti-doping/result', { state: { result, medicineName: product.name } });
+            } else {
+                setDopingCheckSafe(prev => ({ ...prev, [product.id]: result.message || 'Safe' }));
+                setTimeout(() => {
+                    setDopingCheckSafe(prev => {
+                        const newState = { ...prev };
+                        delete newState[product.id];
+                        return newState;
+                    });
+                }, 4000);
+            }
+        } catch (error) {
+            alert(error?.response?.data?.error || 'Failed to check anti-doping status.');
+        } finally {
+            setDopingCheckLoading(null);
+        }
+    };
 
     const prescriptionMatches = Array.isArray(location.state?.prescriptionMatches)
         ? location.state.prescriptionMatches
@@ -283,18 +329,6 @@ const ProductsPage = () => {
                             style={{ borderRadius: '20px' }}
                         />
                     </div>
-                    <div className="nova-search-wrap">
-                        <Search className="nova-search-icon w-4 h-4" />
-                        <input 
-                            type="text" 
-                            id="search-input" 
-                            placeholder="Search medicines, ingredients, categories…" 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            ref={medicineSearchInputRef}
-                        />
-                        <span className="nova-search-kbd">⌘K</span>
-                    </div>
                 </div>
             </div>
 
@@ -356,6 +390,20 @@ const ProductsPage = () => {
             </form>
         </div>
 
+        {/* Medicine Search Bar */}
+        <div className="nova-search-wrap" style={{ maxWidth: '100%' }}>
+            <Search className="nova-search-icon w-4 h-4" />
+            <input
+                type="text"
+                id="search-input"
+                placeholder="Search medicines, ingredients, categories…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                ref={medicineSearchInputRef}
+            />
+            <span className="nova-search-kbd">⌘K</span>
+        </div>
+
         {/* Prescription Results Info */}
         {prescriptionResult && (
             <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--surface2)] p-6 shadow-sm">
@@ -413,21 +461,26 @@ const ProductsPage = () => {
         ) : filteredProducts.length > 0 ? (
             <div className="nova-grid" id="med-grid">
                 {filteredProducts.map((product, i) => {
-                    const isAdded = false; // Add to cart state logic if needed
-                    const hasLowStock = product.inStock; // We can use mock UI for stock percentages 
-                    const stockPct = product.inStock ? 85 : 0;
+                    const isAdded = false;
+                    const rawQty = product.availableQuantity;
+                    const stockPct = typeof rawQty === 'number'
+                        ? Math.min(100, Math.round((rawQty / 100) * 100))  // normalise; cap at 100
+                        : product.inStock ? 85 : 0;
                     const stockColor = stockPct > 50 ? 'var(--accent2)' : 'var(--danger)';
+
+                    // Shared state for every link on this card
+                    const linkState = {
+                        product,
+                        prescriptionOverride: isPrescriptionList ? false : undefined,
+                        prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
+                    };
 
                     return (
                         <div key={product.listKey || product.id} className="nova-card" style={{ animationDelay: `${i * 0.05}s` }}>
                             <div className="nova-card-top">
                                 <Link
                                     to={`/products/${product.routeId || product.id}`}
-                                    state={{
-                                        product,
-                                        prescriptionOverride: isPrescriptionList ? false : undefined,
-                                        prescriptionId: isPrescriptionList ? product.prescriptionId : undefined,
-                                    }}
+                                    state={linkState}
                                     className="nova-card-icon-wrap"
                                 >
                                     <img src={product.image} className="nova-card-icon-img" alt={product.name} onError={(e) => { e.currentTarget.src = FALLBACK_MEDICINE_IMAGE; }} />
@@ -444,7 +497,7 @@ const ProductsPage = () => {
 
                             <Link
                                 to={`/products/${product.routeId || product.id}`}
-                                state={{ product }}
+                                state={linkState}
                                 className="no-underline group"
                             >
                                 <div className="nova-card-name group-hover:text-[var(--accent)] transition-colors">{product.name}</div>
@@ -452,47 +505,73 @@ const ProductsPage = () => {
                                 <span className="nova-card-cat">{product.category}</span>
                             </Link>
 
-                            <div>
-                                <div className="nova-stock-row">
-                                    <span className="nova-stock-text">Availability</span>
-                                    <span className="nova-stock-val" style={{ color: stockColor }}>{product.inStock ? 'Available' : 'Out of Stock'}</span>
-                                </div>
-                                <div className="nova-stock-bar">
-                                    <div className="nova-stock-fill" style={{ width: `${stockPct}%`, background: stockColor }}></div>
-                                </div>
+                            <div className="nova-pharmacy-row">
+                                <span className="nova-pharmacy-icon">🏪</span>
+                                <span className="nova-pharmacy-name">{product.pharmacy}</span>
                             </div>
 
-                            <div className="nova-card-bottom">
-                                <div className="nova-price-wrap">
-                                    {typeof product.price === 'number' ? (
-                                        <div className="nova-price">${product.price.toFixed(2)}</div>
-                                    ) : (
-                                        <div className="nova-price opacity-50 text-sm">Unavailable</div>
-                                    )}
-                                    <span className="nova-price-unit">per pack</span>
-                                </div>
-                                {product.prescriptionRequired ? (
-                                    <Link
-                                        to="/upload-prescription"
-                                        state={{ medicine: product, source: 'products-list' }}
-                                        className="nova-icon-btn"
-                                        title="Upload Rx"
-                                    >
-                                        📄
-                                    </Link>
-                                ) : (
+                            <div className="nova-card-bottom" style={{ flexDirection: 'column', gap: '0.75rem', alignItems: 'stretch' }}>
+                                {/* Athlete Anti-Doping Check — Full Width Row */}
+                                {isAthlete && (
                                     <button
-                                        className={`nova-add-btn ${isAdded ? 'added' : ''}`}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            addToCart(product, 1);
-                                        }}
-                                        disabled={!product.inStock}
-                                        style={!product.inStock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                                        className="nova-doping-check-btn"
+                                        title="Anti-Doping Check"
+                                        onClick={(e) => handleDopingCheck(e, product)}
+                                        disabled={dopingCheckLoading === product.id}
+                                        style={
+                                            dopingCheckSafe[product.id]
+                                                ? { borderColor: 'var(--success)', color: 'var(--success)', background: 'rgba(0,229,192,0.08)' }
+                                                : {}
+                                        }
                                     >
-                                        +
+                                        {dopingCheckLoading === product.id ? (
+                                            <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full block flex-shrink-0"></span>
+                                        ) : (
+                                            <ShieldCheck className="w-4 h-4 flex-shrink-0" />
+                                        )}
+                                        <span>
+                                            {dopingCheckLoading === product.id
+                                                ? 'Checking...'
+                                                : dopingCheckSafe[product.id]
+                                                    ? '✓ Safe for Athletes'
+                                                    : 'Check Medicine'}
+                                        </span>
                                     </button>
                                 )}
+
+                                {/* Price + Action Row */}
+                                <div className="nova-card-action-row">
+                                    <div className="nova-price-wrap">
+                                        {typeof product.price === 'number' ? (
+                                            <div className="nova-price">${product.price.toFixed(2)}</div>
+                                        ) : (
+                                            <div className="nova-price" style={{ opacity: 0.4, fontSize: '0.85rem' }}>Unavailable</div>
+                                        )}
+                                        <span className="nova-price-unit">per pack</span>
+                                    </div>
+                                    {product.prescriptionRequired ? (
+                                        <Link
+                                            to="/upload-prescription"
+                                            state={{ medicine: product, source: 'products-list' }}
+                                            className="nova-icon-btn"
+                                            title="Upload Prescription"
+                                        >
+                                            📄
+                                        </Link>
+                                    ) : (
+                                        <button
+                                            className={`nova-add-btn ${isAdded ? 'added' : ''}`}
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                addToCart(product, 1);
+                                            }}
+                                            disabled={!product.inStock}
+                                            style={!product.inStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+                                        >
+                                            +
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     );

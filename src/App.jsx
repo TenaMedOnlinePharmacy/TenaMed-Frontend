@@ -26,6 +26,7 @@ import MedicalVerificationDashboardPage from './pages/MedicalVerificationDashboa
 import LoadingSpinner from './components/LoadingSpinner';
 import { isDevBypassAllowAllRoles } from './config/devBuilderMode';
 import LoadingPage from './pages/LoadingPage';
+import AntiDopingResultPage from './pages/AntiDopingResultPage';
 
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
@@ -79,6 +80,10 @@ function App() {
           <Route
             path="profile"
             element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>}
+          />
+          <Route
+            path="anti-doping/result"
+            element={<ProtectedRoute roles={['customer']}><AntiDopingResultPage /></ProtectedRoute>}
           />
           <Route
             path="orders"
