@@ -106,13 +106,14 @@ const ProductsPage = () => {
     const handleDopingCheck = async (e, product) => {
         e.preventDefault();
         e.stopPropagation();
+        const medicineNameForCheck = (product.genericName || product.name || '').trim();
         
         setDopingCheckLoading(product.id);
         try {
-            const response = await antiDopingCheck({ medicineName: product.name });
+            const response = await antiDopingCheck({ medicineName: medicineNameForCheck });
             const result = response.data;
             if (result.status === 'BANNED') {
-                navigate('/anti-doping/result', { state: { result, medicineName: product.name } });
+                navigate('/anti-doping/result', { state: { result, medicineName: medicineNameForCheck } });
             } else {
                 setDopingCheckSafe(prev => ({ ...prev, [product.id]: result.message || 'Safe' }));
                 setTimeout(() => {
