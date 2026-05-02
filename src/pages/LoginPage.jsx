@@ -54,13 +54,21 @@ const LoginPage = () => {
                     email: formData.email,
                     password: formData.password,
                 });
-                const accessToken = response?.data?.accessToken || 'frontend-admin-access-token';
+                const accessToken = response?.data?.accessToken;
+                if (!accessToken) {
+                    throw new Error('Missing access token in login response.');
+                }
                 login(accessToken, formData.email, 'admin', false);
-            } catch {
-                // Frontend-only fallback requested when no dedicated backend admin flow exists.
-                login('frontend-admin-access-token', formData.email, 'admin', false);
+                setStatus('idle');
+                navigate('/admin/dashboard');
+            } catch (error) {
+                const message = error?.message
+                    || error?.response?.data?.message
+                    || error?.response?.data?.error
+                    || 'Admin sign-in failed. Use an account that has ADMIN access on the backend.';
+                setErrorMsg(message);
+                setStatus('error');
             }
-            navigate('/admin/dashboard');
             return;
         }
 

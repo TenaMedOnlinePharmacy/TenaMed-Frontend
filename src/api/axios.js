@@ -114,6 +114,15 @@ export const adminApproveHospital = (id) => api.post(`/admin/hospitals/${id}/app
 export const adminRejectHospital = (id) => api.post(`/admin/hospitals/${id}/reject`, null, buildAuthHeaders());
 export const adminSuspendHospital = (id) => api.post(`/admin/hospitals/${id}/suspend`, null, buildAuthHeaders());
 export const adminUnsuspendHospital = (id) => api.post(`/admin/hospitals/${id}/unsuspend`, null, buildAuthHeaders());
+export const adminGetPendingHospitals = () => api.get('/admin/hospitals/pending', buildAuthHeaders());
+export const adminGetPendingPharmacies = () => api.get('/admin/pharmacies/pending', buildAuthHeaders());
+export const adminGetHospitalStats = () => api.get('/admin/hospitals/stats', buildAuthHeaders());
+export const adminGetPharmacyStats = () => api.get('/admin/pharmacies/stats', buildAuthHeaders());
+export const adminSearchHospitals = (name) => api.get('/admin/hospitals/search', withAuthHeaders({ params: sanitizeParams({ name }) }));
+export const adminSearchPharmacies = (name) => api.get('/admin/pharmacies/search', withAuthHeaders({ params: sanitizeParams({ name }) }));
+export const adminMedicineCreate = (payload) => api.post('/admin/medicines', payload, buildAuthHeaders());
+export const adminMedicineUpdate = (id, payload) => api.put(`/admin/medicines/${id}`, payload, buildAuthHeaders());
+export const adminMedicineDelete = (id) => api.delete(`/admin/medicines/${id}`, buildAuthHeaders());
 
 // Payments
 export const paymentTest = () => api.get('/payments/test', buildAuthHeaders());
