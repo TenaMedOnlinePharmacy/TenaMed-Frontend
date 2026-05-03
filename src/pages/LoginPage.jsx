@@ -1,37 +1,24 @@
-import React, { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowRight, Lock, Shield, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Lock, User } from 'lucide-react';
 import { antiDopingAthleteProfileExists, authLogin, pharmacyListStaff } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { getDevBypassRole, isBuilderMode, SUPPORTED_ROLES } from '../config/devBuilderMode';
+import { getDevBypassRole, isBuilderMode } from '../config/devBuilderMode';
+import { getAccessTokenFromLoginResponse, getDefaultRedirectByRole, getRolesFromAuthResponse, resolveFrontendRoleFromClaims } from '../utils/authRole';
 
-const roles = SUPPORTED_ROLES;
 const ATHLETE_FLAG_KEY = 'tenamed_is_athlete';
 const FRONTEND_ADMIN_EMAIL = 'jemud9090@gmail.com';
 const FRONTEND_ADMIN_PASSWORD = '12345678';
 
-const redirectByRole = {
-    customer: '/',
-    pharmacy: '/pharmacist/dashboard',
-    pharmacist: '/pharmacist/dashboard',
-    hospital: '/hospital/dashboard',
-};
-
 const LoginPage = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const initialRole = searchParams.get('role');
     const builderModeEnabled = isBuilderMode();
     const builderRole = getDevBypassRole();
-    const defaultRole = builderModeEnabled ? builderRole : (roles.includes(initialRole) ? initialRole : 'customer');
 
     const { login } = useAuth();
-    const [role, setRole] = useState(defaultRole);
     const [formData, setFormData] = useState({ email: '', password: '' });
     const [status, setStatus] = useState('idle');
     const [errorMsg, setErrorMsg] = useState('');
-
-    const roleTitle = useMemo(() => role.charAt(0).toUpperCase() + role.slice(1), [role]);
 
     const handleChange = (event) => {
         setFormData((prev) => ({ ...prev, [event.target.name]: event.target.value }));
@@ -54,13 +41,14 @@ const LoginPage = () => {
                     email: formData.email,
                     password: formData.password,
                 });
-                const accessToken = response?.data?.accessToken;
-                if (!accessToken) {
-                    throw new Error('Missing access token in login response.');
-                }
-                login(accessToken, formData.email, 'admin', false);
+                const responseData = response?.data || {};
+                const accessToken = getAccessTokenFromLoginResponse(responseData);
+                const sessionToken = accessToken || `cookie-session-${responseData?.jti || Date.now()}`;
+                const claimsRoles = getRolesFromAuthResponse(responseData);
+                const backendRole = resolveFrontendRoleFromClaims(claimsRoles, 'admin');
+                login(sessionToken, formData.email, backendRole, false);
                 setStatus('idle');
-                navigate('/admin/dashboard');
+                navigate(getDefaultRedirectByRole(backendRole));
             } catch (error) {
                 const message = error?.message
                     || error?.response?.data?.message
@@ -72,7 +60,7 @@ const LoginPage = () => {
             return;
         }
 
-        const activeRole = builderModeEnabled ? builderRole : role;
+        const fallbackRole = builderModeEnabled ? builderRole : 'customer';
 
         try {
             const response = await authLogin({
@@ -80,15 +68,16 @@ const LoginPage = () => {
                 password: formData.password,
             });
 
-            const accessToken = response?.data?.accessToken;
-            if (!accessToken) {
-                throw new Error('Missing access token in login response.');
-            }
+            const responseData = response?.data || {};
+            const claimsRoles = getRolesFromAuthResponse(responseData);
+            const backendRole = resolveFrontendRoleFromClaims(claimsRoles, fallbackRole);
+            const accessToken = getAccessTokenFromLoginResponse(responseData);
+            const sessionToken = accessToken || `cookie-session-${responseData?.jti || Date.now()}`;
 
             // Temporarily persist token so role validation calls use the same auth context.
-            localStorage.setItem('tenamed_access_token', accessToken);
+            localStorage.setItem('tenamed_access_token', sessionToken);
 
-            if (activeRole === 'pharmacy') {
+            if (backendRole === 'pharmacy') {
                 try {
                     await pharmacyListStaff();
                 } catch {
@@ -97,7 +86,7 @@ const LoginPage = () => {
                 }
             }
 
-            if (activeRole === 'customer') {
+            if (backendRole === 'customer') {
                 let isAthlete = false;
                 try {
                     const athleteProfileResponse = await antiDopingAthleteProfileExists();
@@ -117,12 +106,17 @@ const LoginPage = () => {
                 localStorage.removeItem(ATHLETE_FLAG_KEY);
             }
 
-            login(accessToken, formData.email, activeRole, activeRole === 'customer' ? localStorage.getItem(ATHLETE_FLAG_KEY) === 'true' : false);
-            navigate(redirectByRole[activeRole] || '/');
+            login(
+                sessionToken,
+                formData.email,
+                backendRole,
+                backendRole === 'customer' ? localStorage.getItem(ATHLETE_FLAG_KEY) === 'true' : false,
+            );
+            navigate(getDefaultRedirectByRole(backendRole));
         } catch (error) {
             if (builderModeEnabled) {
-                login(`mock-${activeRole}-token`, formData.email, activeRole);
-                navigate(redirectByRole[activeRole] || '/');
+                login(`mock-${builderRole}-token`, formData.email, builderRole);
+                navigate(getDefaultRedirectByRole(builderRole));
                 return;
             }
 
@@ -137,24 +131,12 @@ const LoginPage = () => {
             <div className="max-w-2xl w-full space-y-8 bg-[var(--surface)] p-10 rounded-2xl border border-[var(--border)] shadow-[var(--shadow)] backdrop-blur-xl">
                 <div className="text-center">
                     <div className="mx-auto h-14 w-14 bg-[rgba(var(--accent-rgb),0.1)] border border-[rgba(var(--accent-rgb),0.2)] rounded-2xl flex items-center justify-center mb-6 shadow-[var(--glow)]">
-                        {role === 'admin' || role === 'doctor' ? <Shield className="h-6 w-6 text-[var(--accent)]" /> : <User className="h-6 w-6 text-[var(--accent)]" />}
+                        <User className="h-6 w-6 text-[var(--accent)]" />
                     </div>
                     <h2 className="font-syne text-3xl md:text-4xl font-bold text-[var(--text)] tracking-tight">Welcome Back</h2>
-                    <p className="mt-2 text-[var(--text2)] font-light text-sm">Sign in to your <span className="font-medium text-[var(--text)]">{roleTitle}</span> account</p>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-5 bg-[var(--bg2)] p-1 rounded-xl gap-1 border border-[var(--border2)]">
-                    {roles.map((entry) => (
-                        <button
-                            key={entry}
-                            type="button"
-                            disabled={builderModeEnabled}
-                            onClick={() => setRole(entry)}
-                            className={`py-2 text-xs md:text-sm font-medium rounded-lg transition-all duration-200 capitalize font-mono tracking-tight ${role === entry ? 'bg-[var(--surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface2)]'} ${builderModeEnabled ? 'opacity-60 cursor-not-allowed' : ''}`}
-                        >
-                            {entry}
-                        </button>
-                    ))}
+                    <p className="mt-2 text-[var(--text2)] font-light text-sm">
+                        Sign in once and you will be redirected based on your assigned role.
+                    </p>
                 </div>
 
                 {builderModeEnabled && (
@@ -215,7 +197,7 @@ const LoginPage = () => {
                         disabled={status === 'loading'}
                         className={`btn-primary w-full py-3.5 text-base rounded-xl ${status === 'loading' ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        {status === 'loading' ? 'Signing in...' : `Sign in as ${roleTitle}`}
+                        {status === 'loading' ? 'Signing in...' : 'Sign in'}
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform flex-shrink-0" />
                     </button>
                 </form>

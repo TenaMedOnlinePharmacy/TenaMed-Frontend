@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { authLogin, authSendOtp, authVerifyOtp } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { getAccessTokenFromLoginResponse, getDefaultRedirectByRole, getRolesFromAuthResponse, resolveFrontendRoleFromClaims } from '../utils/authRole';
 
 const OTP_TYPE = 'doctor_login';
 
@@ -43,12 +44,13 @@ const DoctorLoginPage = () => {
                     email: email.trim(),
                     password,
                 });
-                const accessToken = loginResponse?.data?.accessToken;
-                if (!accessToken) {
-                    throw new Error('Missing access token in login response.');
-                }
-                login(accessToken, email.trim(), 'doctor');
-                navigate('/doctor/prescriptions/new');
+                const responseData = loginResponse?.data || {};
+                const accessToken = getAccessTokenFromLoginResponse(responseData);
+                const sessionToken = accessToken || `cookie-session-${responseData?.jti || Date.now()}`;
+                const claimsRoles = getRolesFromAuthResponse(responseData);
+                const backendRole = resolveFrontendRoleFromClaims(claimsRoles, 'doctor');
+                login(sessionToken, email.trim(), backendRole);
+                navigate(getDefaultRedirectByRole(backendRole));
             } catch (err) {
                 const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Login failed.';
                 setError(message);
@@ -96,13 +98,13 @@ const DoctorLoginPage = () => {
                 email: email.trim(),
                 password,
             });
-            const accessToken = loginResponse?.data?.accessToken;
-            if (!accessToken) {
-                throw new Error('Missing access token in login response.');
-            }
-
-            login(accessToken, email.trim(), 'doctor');
-            navigate('/doctor/prescriptions/new');
+            const responseData = loginResponse?.data || {};
+            const accessToken = getAccessTokenFromLoginResponse(responseData);
+            const sessionToken = accessToken || `cookie-session-${responseData?.jti || Date.now()}`;
+            const claimsRoles = getRolesFromAuthResponse(responseData);
+            const backendRole = resolveFrontendRoleFromClaims(claimsRoles, 'doctor');
+            login(sessionToken, email.trim(), backendRole);
+            navigate(getDefaultRedirectByRole(backendRole));
         } catch (err) {
             const status = err?.response?.status;
             const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'OTP verification failed.';

@@ -299,10 +299,10 @@ export const cartClear = () => apiRoot.delete('/api/cart/clear', buildAuthHeader
 export const cartCheckout = () => apiRoot.post('/api/cart/checkout', null, buildAuthHeaders());
 
 // Manual review (explicit /api path strategy)
-export const manualReviewGetTasks = (status) => apiRoot.get('/api/pharmacist/tasks', withAuthHeaders({ params: status ? { status } : {} }));
-export const manualReviewGetMyTasks = () => apiRoot.get('/api/pharmacist/tasks/my', buildAuthHeaders());
-export const manualReviewClaimTask = (id) => apiRoot.post(`/api/pharmacist/tasks/${id}/claim`, null, buildAuthHeaders());
-export const manualReviewCompleteTask = (id, payload) => apiRoot.post(`/api/pharmacist/tasks/${id}/complete`, payload, buildAuthHeaders());
+export const manualReviewGetTasks = () => apiRoot.get('/api/manual-review', buildAuthHeaders());
+export const manualReviewGetMyTasks = () => apiRoot.get('/api/manual-review/my', buildAuthHeaders());
+export const manualReviewClaimTask = (id) => apiRoot.post(`/api/manual-review/${id}/claim`, null, buildAuthHeaders());
+export const manualReviewCompleteTask = (id, payload) => apiRoot.post(`/api/manual-review/${id}/complete`, payload, buildAuthHeaders());
 
 
 export default api;

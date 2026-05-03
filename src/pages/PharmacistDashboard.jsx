@@ -17,6 +17,7 @@ import { resolveApiImageUrl } from '../utils/imageUrl';
 const PharmacistDashboard = () => {
     const { userRole } = useAuth();
     const isPharmacyOwner = userRole === 'pharmacy';
+    const isAdminPharmacist = ['ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist'].includes(userRole);
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const requestedTab = searchParams.get('tab');
@@ -353,9 +354,16 @@ const PharmacistDashboard = () => {
                 )}
 
                 <div className="mb-6">
-                    <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold">
-                        Open Prescription Review Queue
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Link to="/pharmacist/prescription-review" className="inline-flex items-center gap-2 btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold">
+                            Open Prescription Review Queue
+                        </Link>
+                        {isAdminPharmacist ? (
+                            <Link to="/pharmacist/manual-review/tasks" className="inline-flex items-center gap-2 btn-secondary px-5 py-2.5 rounded-xl text-sm font-semibold">
+                                Open Manual Review Tasks
+                            </Link>
+                        ) : null}
+                    </div>
                 </div>
 
                 {activeTab === 'orders' ? (

@@ -19,6 +19,9 @@ import UploadPrescriptionPage from './pages/UploadPrescriptionPage';
 import UserProfilePage from './pages/UserProfilePage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import PrescriptionReviewPage from './pages/PrescriptionReviewPage';
+import ManualReviewTaskListPage from './pages/ManualReviewTaskListPage';
+import ManualReviewMyTasksPage from './pages/ManualReviewMyTasksPage';
+import ManualReviewTaskPage from './pages/ManualReviewTaskPage';
 import HospitalRegistrationPage from './pages/HospitalRegistrationPage';
 import HospitalDashboardPage from './pages/HospitalDashboardPage';
 import DoctorLoginPage from './pages/DoctorLoginPage';
@@ -111,6 +114,18 @@ function App() {
           <Route
             path="pharmacist/prescription-review"
             element={<ProtectedRoute roles={['pharmacy', 'pharmacist']}><PrescriptionReviewPage /></ProtectedRoute>}
+          />
+          <Route
+            path="pharmacist/manual-review/tasks"
+            element={<ProtectedRoute roles={['ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist']}><ManualReviewTaskListPage /></ProtectedRoute>}
+          />
+          <Route
+            path="pharmacist/manual-review/my-tasks"
+            element={<ProtectedRoute roles={['ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist']}><ManualReviewMyTasksPage /></ProtectedRoute>}
+          />
+          <Route
+            path="pharmacist/manual-review/tasks/:id"
+            element={<ProtectedRoute roles={['ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist']}><ManualReviewTaskPage /></ProtectedRoute>}
           />
           <Route
             path="pharmacist/inventory/batch/new"
