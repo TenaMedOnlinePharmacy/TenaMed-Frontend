@@ -126,14 +126,15 @@ export const adminMedicineDelete = (id) => api.delete(`/admin/medicines/${id}`, 
 
 // Payments
 export const paymentTest = () => api.get('/payments/test', buildAuthHeaders());
-export const paymentInitialize = (orderId = '6169471a-bb60-4887-b5c3-66fffeaa5d2e') => api.post(
-    '/payments/initialize',
+export const paymentInitialize = (orderId) => apiRoot.post(
+    '/api/payments/initialize',
     {
         orderId,
     },
     buildAuthHeaders(),
 );
 export const paymentCancel = (txRef) => api.put(`/payments/cancel/${txRef}`, null, buildAuthHeaders());
+export const paymentStatus = (orderId) => apiRoot.get(`/api/payments/status/${orderId}`, buildAuthHeaders());
 export const paymentWebhookGet = (txRef) => api.get('/payments/webhook', withAuthHeaders({ params: { tx_ref: txRef } }));
 export const paymentWebhookPost = (payload) => api.post('/payments/webhook', payload, buildAuthHeaders());
 

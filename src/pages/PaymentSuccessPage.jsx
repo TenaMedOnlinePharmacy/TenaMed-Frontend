@@ -20,17 +20,7 @@ const PaymentSuccessPage = () => {
                     <p className="text-gray-600 mb-6">
                         {result.message || `Your payment has been completed successfully${typeof total === 'number' ? ` for ETB ${total.toFixed(2)}` : ''}. We are now processing your order.`}
                     </p>
-                    
-                    {(result.orderId || result.paymentId) && (
-                        <div className="mb-6 rounded-lg bg-green-50 border border-green-100 p-4 text-left text-sm text-green-800">
-                            <p><span className="font-semibold">Order ID:</span> {result.orderId || '-'}</p>
-                            <p><span className="font-semibold">Transaction Ref:</span> {result.txRef || '-'}</p>
-                            <p><span className="font-semibold">Payment ID:</span> {result.paymentId || '-'}</p>
-                            <p><span className="font-semibold">Order Status:</span> {result.orderStatus || '-'}</p>
-                            <p><span className="font-semibold">Payment Status:</span> {result.orderPaymentStatus || '-'}</p>
-                        </div>
-                    )}
-                    
+                
                     <button
                         onClick={() => navigate('/')}
                         className="bg-emerald-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-emerald-700 transition"

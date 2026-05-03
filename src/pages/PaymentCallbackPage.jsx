@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { paymentWebhookGet } from '../api/axios';
+import { paymentStatus } from '../api/axios';
 
 const PENDING_PAYMENT_KEY = 'tenamed_pending_payment';
 
@@ -12,13 +12,13 @@ const PaymentCallbackPage = () => {
         let isMounted = true;
 
         const finalize = async () => {
-            const txRef = searchParams.get('tx_ref') || searchParams.get('trx_ref') || '';
             const providerStatus = (searchParams.get('status') || '').toLowerCase();
             const pendingPaymentRaw = localStorage.getItem(PENDING_PAYMENT_KEY) || '{}';
             const pendingPayment = (() => { try { return JSON.parse(pendingPaymentRaw); } catch { return {}; } })();
+            const orderId = pendingPayment?.orderId;
 
-            if (!txRef) {
-                if (isMounted) navigate('/payment-failed', { state: { status: 'failed', message: 'Missing payment reference from Chapa callback.' }, replace: true });
+            if (!orderId) {
+                if (isMounted) navigate('/payment-failed', { state: { status: 'failed', message: 'Missing order ID for payment status check.' }, replace: true });
                 return;
             }
 
@@ -29,21 +29,31 @@ const PaymentCallbackPage = () => {
             }
 
             try {
-                const response = await paymentWebhookGet(txRef);
+                const response = await paymentStatus(orderId);
                 localStorage.removeItem(PENDING_PAYMENT_KEY);
                 
                 if (isMounted) {
                     const responseData = response?.data || {};
                     const normalizedStatus = String(responseData.status || '').toLowerCase();
+                    const isSuccessful = Boolean(responseData.isSuccessful) || normalizedStatus === 'success';
                     
-                    if (normalizedStatus === 'success') {
+                    if (isSuccessful) {
                         navigate('/payment-success', { 
-                            state: { ...responseData, total: pendingPayment?.total },
+                            state: {
+                                ...responseData,
+                                orderId: responseData.orderId || orderId,
+                                total: pendingPayment?.total,
+                                orderPaymentStatus: responseData.status || null,
+                            },
                             replace: true 
                         });
                     } else {
                         navigate('/payment-failed', { 
-                            state: { ...responseData },
+                            state: {
+                                ...responseData,
+                                orderId: responseData.orderId || orderId,
+                                message: responseData?.message || `Payment is ${String(responseData.status || 'PENDING').toUpperCase()}.`,
+                            },
                             replace: true 
                         });
                     }

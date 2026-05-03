@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
@@ -26,8 +26,13 @@ const CheckoutPage = () => {
         phone: '',
     });
 
+    useEffect(() => {
+        if (cartItems.length === 0) {
+            navigate('/cart');
+        }
+    }, [cartItems.length, navigate]);
+
     if (cartItems.length === 0) {
-        navigate('/cart');
         return null;
     }
 
@@ -44,7 +49,11 @@ const CheckoutPage = () => {
 
             try {
                 const checkoutResponse = await cartCheckout();
-                const firstOrderId = checkoutResponse?.data?.orderIds?.[0];
+                const checkoutData = checkoutResponse?.data || {};
+                const firstOrderId = checkoutData?.orderId
+                    || checkoutData?.orderIds?.[0]
+                    || checkoutData?.data?.orderId
+                    || checkoutData?.data?.orderIds?.[0];
                 if (!firstOrderId) {
                     throw new Error('No order id returned from cart checkout');
                 }
@@ -52,8 +61,9 @@ const CheckoutPage = () => {
                 const response = await paymentInitialize(firstOrderId);
 
                 const checkoutUrl = response?.data?.checkout_url;
-                if (!checkoutUrl) {
-                    throw new Error('Missing checkout URL');
+                if (!checkoutUrl || !/^https?:\/\//i.test(checkoutUrl)) {
+                    const backendMessage = response?.data?.message || response?.data?.error || response?.data?.checkout_url;
+                    throw new Error(backendMessage || 'Payment gateway did not return a valid checkout URL');
                 }
 
                 localStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify({
@@ -81,7 +91,10 @@ const CheckoutPage = () => {
                     return;
                 }
 
-                const message = error?.response?.data?.message || 'Payment initialization failed. Please try again.';
+                const message = error?.response?.data?.error
+                    || error?.response?.data?.message
+                    || error?.message
+                    || 'Payment initialization failed. Please try again.';
                 setErrorMsg(message);
             } finally {
                 setIsProcessing(false);
