@@ -1,7 +1,5 @@
 import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://nonobediently-nonperishing-hilda.ngrok-free.dev/api';
-const API_ROOT_URL = API_BASE_URL.replace(/\/api\/?$/, '');
+import { API_BASE_URL, API_ROOT_URL } from '../utils/apiOrigin';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -303,6 +301,7 @@ export const manualReviewGetTasks = () => apiRoot.get('/api/manual-review', buil
 export const manualReviewGetMyTasks = () => apiRoot.get('/api/manual-review/my', buildAuthHeaders());
 export const manualReviewClaimTask = (id) => apiRoot.post(`/api/manual-review/${id}/claim`, null, buildAuthHeaders());
 export const manualReviewCompleteTask = (id, payload) => apiRoot.post(`/api/manual-review/${id}/complete`, payload, buildAuthHeaders());
+export const manualReviewRejectTask = (id, payload) => apiRoot.post(`/api/manual-review/${id}/reject`, payload, buildAuthHeaders());
 
 
 export default api;

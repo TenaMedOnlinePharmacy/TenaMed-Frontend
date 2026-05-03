@@ -3,27 +3,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { BellRing, ClipboardList, Loader2 } from 'lucide-react';
 import { manualReviewClaimTask, manualReviewGetTasks } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { getBackendWebSocketUrl } from '../utils/apiOrigin';
 
 const getTasksArray = (responseData) => {
     if (Array.isArray(responseData)) return responseData;
     if (Array.isArray(responseData?.data)) return responseData.data;
     if (Array.isArray(responseData?.content)) return responseData.content;
     return [];
-};
-
-const toWsUrl = () => {
-    const apiBase = import.meta.env.VITE_API_URL || '';
-    if (!apiBase) {
-        const isSecure = window.location.protocol === 'https:';
-        return `${isSecure ? 'wss' : 'ws'}://${window.location.host}/ws`;
-    }
-
-    const url = new URL(apiBase, window.location.origin);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    url.pathname = '/ws';
-    url.search = '';
-    url.hash = '';
-    return url.toString();
 };
 
 const normalizeServerEvent = (raw) => {
@@ -76,7 +62,12 @@ const ManualReviewTaskListPage = () => {
     }, []);
 
     useEffect(() => {
-        const socket = new WebSocket(toWsUrl());
+        let socket;
+        try {
+            socket = new WebSocket(getBackendWebSocketUrl('/ws'));
+        } catch {
+            return undefined;
+        }
 
         socket.onopen = () => {
             try {
@@ -132,7 +123,11 @@ const ManualReviewTaskListPage = () => {
         };
 
         return () => {
-            socket.close();
+            try {
+                socket?.close();
+            } catch {
+                // ignore
+            }
         };
     }, [userEmail]);
 

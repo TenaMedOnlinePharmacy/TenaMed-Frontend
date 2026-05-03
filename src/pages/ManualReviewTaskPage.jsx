@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { manualReviewCompleteTask, manualReviewGetMyTasks } from '../api/axios';
+import { manualReviewCompleteTask, manualReviewGetMyTasks, manualReviewRejectTask } from '../api/axios';
 import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const getTasksArray = (responseData) => {
@@ -22,10 +22,11 @@ const ManualReviewTaskPage = () => {
     const [formData, setFormData] = useState({
         decision: 'APPROVED',
         medicineName: '',
-        dosage: '',
         quantity: '',
+        strength: '',
+        form: '',
         instructions: '',
-        notes: '',
+        rejectReason: '',
     });
 
     useEffect(() => {
@@ -69,20 +70,38 @@ const ManualReviewTaskPage = () => {
         setSubmitErrorMsg('');
         setIsSubmitting(true);
         try {
-            await manualReviewCompleteTask(id, {
-                decision: formData.decision,
-                medicineName: formData.medicineName.trim(),
-                dosage: formData.dosage.trim(),
-                quantity: formData.quantity.trim(),
-                instructions: formData.instructions.trim(),
-                notes: formData.notes.trim(),
-                medicineDetails: {
-                    name: formData.medicineName.trim(),
-                    dosage: formData.dosage.trim(),
-                    quantity: formData.quantity.trim(),
-                    instructions: formData.instructions.trim(),
-                },
-            });
+            if (formData.decision === 'REJECTED') {
+                const reason = formData.rejectReason.trim();
+                if (!reason) {
+                    setSubmitErrorMsg('Please enter a rejection reason.');
+                    setIsSubmitting(false);
+                    return;
+                }
+                await manualReviewRejectTask(id, { reason });
+            } else {
+                const quantityRaw = String(formData.quantity || '').trim();
+                const quantityNum = Number.parseInt(quantityRaw, 10);
+                if (!formData.medicineName.trim()) {
+                    setSubmitErrorMsg('Medicine name is required.');
+                    setIsSubmitting(false);
+                    return;
+                }
+                if (Number.isNaN(quantityNum) || quantityNum < 1) {
+                    setSubmitErrorMsg('Quantity must be a positive whole number.');
+                    setIsSubmitting(false);
+                    return;
+                }
+                // Backend expects List<PrescriptionItemRequestDto> — a JSON array, not one object.
+                await manualReviewCompleteTask(id, [
+                    {
+                        medicineName: formData.medicineName.trim(),
+                        quantity: quantityNum,
+                        strength: String(formData.strength || '').trim(),
+                        form: String(formData.form || '').trim(),
+                        instructions: String(formData.instructions || '').trim(),
+                    },
+                ]);
+            }
             navigate('/pharmacist/manual-review/tasks');
         } catch (error) {
             setSubmitErrorMsg(error?.response?.data?.error || error?.response?.data?.message || 'Failed to submit manual review decision.');
@@ -150,62 +169,83 @@ const ManualReviewTaskPage = () => {
                                         onChange={(event) => handleChange('decision', event.target.value)}
                                         className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
                                     >
-                                        <option value="APPROVED">APPROVED</option>
-                                        <option value="REJECTED">REJECTED</option>
+                                        <option value="APPROVED">Approve (complete)</option>
+                                        <option value="REJECTED">Reject</option>
                                     </select>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm text-[var(--text2)] mb-1">Medicine Name</label>
-                                    <input
-                                        type="text"
-                                        value={formData.medicineName}
-                                        onChange={(event) => handleChange('medicineName', event.target.value)}
-                                        required={formData.decision === 'APPROVED'}
-                                        className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                                    />
-                                </div>
+                                {formData.decision === 'APPROVED' ? (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm text-[var(--text2)] mb-1">Medicine name</label>
+                                            <input
+                                                type="text"
+                                                value={formData.medicineName}
+                                                onChange={(event) => handleChange('medicineName', event.target.value)}
+                                                required
+                                                className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                                            />
+                                        </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-sm text-[var(--text2)] mb-1">Quantity</label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    step={1}
+                                                    value={formData.quantity}
+                                                    onChange={(event) => handleChange('quantity', event.target.value)}
+                                                    required
+                                                    className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm text-[var(--text2)] mb-1">Strength</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.strength}
+                                                    onChange={(event) => handleChange('strength', event.target.value)}
+                                                    placeholder="e.g. 500mg"
+                                                    className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm text-[var(--text2)] mb-1">Form</label>
+                                            <input
+                                                type="text"
+                                                value={formData.form}
+                                                onChange={(event) => handleChange('form', event.target.value)}
+                                                placeholder="e.g. Tablet"
+                                                className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm text-[var(--text2)] mb-1">Instructions</label>
+                                            <textarea
+                                                value={formData.instructions}
+                                                onChange={(event) => handleChange('instructions', event.target.value)}
+                                                rows={3}
+                                                className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
                                     <div>
-                                        <label className="block text-sm text-[var(--text2)] mb-1">Dosage</label>
-                                        <input
-                                            type="text"
-                                            value={formData.dosage}
-                                            onChange={(event) => handleChange('dosage', event.target.value)}
+                                        <label className="block text-sm text-[var(--text2)] mb-1">Rejection reason</label>
+                                        <textarea
+                                            value={formData.rejectReason}
+                                            onChange={(event) => handleChange('rejectReason', event.target.value)}
+                                            rows={4}
+                                            required
+                                            placeholder="e.g. Prescription unreadable"
                                             className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm text-[var(--text2)] mb-1">Quantity</label>
-                                        <input
-                                            type="text"
-                                            value={formData.quantity}
-                                            onChange={(event) => handleChange('quantity', event.target.value)}
-                                            className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm text-[var(--text2)] mb-1">Instructions</label>
-                                    <textarea
-                                        value={formData.instructions}
-                                        onChange={(event) => handleChange('instructions', event.target.value)}
-                                        rows={3}
-                                        className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm text-[var(--text2)] mb-1">Notes</label>
-                                    <textarea
-                                        value={formData.notes}
-                                        onChange={(event) => handleChange('notes', event.target.value)}
-                                        rows={3}
-                                        className="w-full rounded-lg border border-[var(--border2)] bg-[var(--bg)] px-3 py-2.5 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-                                    />
-                                </div>
+                                )}
 
                                 {submitErrorMsg ? (
                                     <div className="rounded-lg border border-[var(--danger-border)] bg-[rgba(var(--danger-rgb),0.1)] px-3 py-2 text-sm text-[var(--danger)]">
@@ -218,7 +258,7 @@ const ManualReviewTaskPage = () => {
                                     disabled={isSubmitting}
                                     className="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold disabled:opacity-60"
                                 >
-                                    {isSubmitting ? 'Submitting...' : 'Submit Decision'}
+                                    {isSubmitting ? 'Submitting...' : formData.decision === 'REJECTED' ? 'Submit rejection' : 'Submit approval'}
                                 </button>
                             </form>
                         </section>
