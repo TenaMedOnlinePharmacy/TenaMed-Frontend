@@ -84,10 +84,12 @@ const MetaPill = ({ label, value }) => {
 /* ── Main component ────────────────────────────────────── */
 const ProductDetailsPage = () => {
     const { id } = useParams();
+    const routeIdIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
     const location = useLocation();
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
+    const [cartError, setCartError] = useState('');
     const { addToCart } = useCart();
     const navigate = useNavigate();
 
@@ -106,14 +108,18 @@ const ProductDetailsPage = () => {
     useEffect(() => {
         let isMounted = true;
         const routedProduct = location?.state?.product;
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id || ''));
+        const isUuid = routeIdIsUuid;
 
         if (routedProduct) {
-            setProduct(applyOverride(routedProduct));
-            if (!isUuid) {
-                setIsLoading(false);
-                return () => { isMounted = false; };
-            }
+            // Preserve full product payload from ProductsPage to avoid ID mismatches.
+            setProduct(applyOverride({
+                ...routedProduct,
+                id: routedProduct?.id || id,
+                productId: routedProduct?.productId || (isUuid ? id : null),
+                medicineId: routedProduct?.medicineId || routedProduct?.id || null,
+            }));
+            setIsLoading(false);
+            return () => { isMounted = false; };
         }
 
         const loadMedicine = async () => {
@@ -131,6 +137,10 @@ const ProductDetailsPage = () => {
                     const merged = {
                         ...(routedProduct || {}),
                         ...fromApi,
+                        // Keep product identity from routed state when API response lacks product-specific ids.
+                        productId: fromApi.productId || routedProduct?.productId || (isUuid ? id : null),
+                        medicineId: fromApi.medicineId || routedProduct?.medicineId || fromApi.id || null,
+                        id: fromApi.id || routedProduct?.id || (isUuid ? id : fromApi.id),
                         price: fromApi.price > 0 ? fromApi.price : (routedProduct?.price ?? 0),
                         pharmacy: (fromApi.pharmacy && fromApi.pharmacy !== 'TenaMED Partner Pharmacy')
                             ? fromApi.pharmacy : (routedProduct?.pharmacy || fromApi.pharmacy),
@@ -155,13 +165,26 @@ const ProductDetailsPage = () => {
         return () => { isMounted = false; };
     }, [id, location.state]);
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
+        setCartError('');
         if (product?.prescriptionRequired) {
             navigate('/upload-prescription', { state: { medicine: product, source: 'product-details' } });
             return;
         }
-        addToCart(product, quantity);
-        navigate('/cart');
+        const resolvedProductId = product?.productId || (routeIdIsUuid ? id : null);
+        if (!resolvedProductId) {
+            setCartError('This item is missing product ID. Please open it from the product list and try again.');
+            return;
+        }
+        try {
+            await addToCart({
+                ...product,
+                productId: resolvedProductId,
+            }, quantity);
+            navigate('/cart');
+        } catch (error) {
+            setCartError(error?.response?.data?.error || 'Unable to add this item to cart. Please try again.');
+        }
     };
 
     if (isLoading) {
@@ -308,6 +331,11 @@ const ProductDetailsPage = () => {
                                         {product.prescriptionRequired ? 'Upload Prescription' : 'Add to Cart'}
                                     </button>
                                 </div>
+                                {cartError ? (
+                                    <p className="mt-3 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-300">
+                                        {cartError}
+                                    </p>
+                                ) : null}
                             </div>
                         </div>
                     </div>

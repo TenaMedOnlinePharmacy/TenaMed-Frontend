@@ -10,6 +10,8 @@ import ProductDetailsPage from './pages/ProductDetailsPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import PaymentFailedPage from './pages/PaymentFailedPage';
+import PaymentCallbackPage from './pages/PaymentCallbackPage';
 import PharmacistDashboard from './pages/PharmacistDashboard';
 import InventoryBatchCreatePage from './pages/InventoryBatchCreatePage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -76,6 +78,14 @@ function App() {
           <Route
             path="payment-success"
             element={<ProtectedRoute roles={['customer']}><PaymentSuccessPage /></ProtectedRoute>}
+          />
+          <Route
+            path="payment-failed"
+            element={<ProtectedRoute roles={['customer']}><PaymentFailedPage /></ProtectedRoute>}
+          />
+          <Route
+            path="payment/callback"
+            element={<ProtectedRoute roles={['customer']}><PaymentCallbackPage /></ProtectedRoute>}
           />
           <Route
             path="profile"

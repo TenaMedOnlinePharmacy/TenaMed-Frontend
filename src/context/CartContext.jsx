@@ -129,7 +129,7 @@ export const CartProvider = ({ children }) => {
         localStorage.setItem(CART_META_KEY, JSON.stringify(cartMetadata));
     }, [cartMetadata]);
 
-    const addToCart = (product, quantity = 1) => {
+    const addToCart = async (product, quantity = 1) => {
         const metadata = toMetadata(product);
         if (metadata) {
             setCartMetadata((prev) => ({
@@ -139,17 +139,21 @@ export const CartProvider = ({ children }) => {
             }));
         }
 
-        cartAddItem(buildCartAddPayload(product, quantity))
-            .then((response) => {
-                const mapped = mapServerCartToUi(response?.data, {
-                    ...cartMetadata,
-                    ...(metadata?.productId ? { [metadata.productId]: metadata } : {}),
-                });
-                setCartItems(mapped);
-            })
-            .catch(() => {
-                // Keep local optimistic state if API call fails.
+        if (!product?.productId && !product?.medicineId) {
+            throw new Error('Missing product identifier');
+        }
+
+        try {
+            const response = await cartAddItem(buildCartAddPayload(product, quantity));
+            const mapped = mapServerCartToUi(response?.data, {
+                ...cartMetadata,
+                ...(metadata?.productId ? { [metadata.productId]: metadata } : {}),
             });
+            setCartItems(mapped);
+            return response;
+        } catch (error) {
+            throw error;
+        }
     };
 
     const removeFromCart = (productId) => {

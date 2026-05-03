@@ -7,6 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import { saveOrder } from '../data/orderStore';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
+const PENDING_PAYMENT_KEY = 'tenamed_pending_payment';
+
 const CheckoutPage = () => {
     const { cartItems, getCartTotal, clearCart } = useCart();
     const { userEmail } = useAuth();
@@ -54,6 +56,11 @@ const CheckoutPage = () => {
                     throw new Error('Missing checkout URL');
                 }
 
+                localStorage.setItem(PENDING_PAYMENT_KEY, JSON.stringify({
+                    orderId: firstOrderId,
+                    total,
+                    createdAt: new Date().toISOString(),
+                }));
                 window.location.href = checkoutUrl;
                 return;
             } catch (error) {

@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 const CartPage = () => {
     const { cartItems, refreshCart, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+    const navigate = useNavigate();
+    const [checkoutWarning, setCheckoutWarning] = useState('');
 
     useEffect(() => {
         refreshCart();
@@ -13,6 +15,24 @@ const CartPage = () => {
     const subtotal = getCartTotal();
     const shipping = subtotal > 50 ? 0 : 5.00;
     const total = subtotal + shipping;
+    const uniquePharmacies = useMemo(() => (
+        [...new Set(
+            cartItems
+                .map((item) => String(item?.pharmacy || '').trim().toLowerCase())
+                .filter(Boolean),
+        )]
+    ), [cartItems]);
+    const hasMixedPharmacies = uniquePharmacies.length > 1;
+
+    const handleProceedToCheckout = (event) => {
+        event.preventDefault();
+        if (hasMixedPharmacies) {
+            setCheckoutWarning('Your cart has medicines from different pharmacies. Please keep only one pharmacy before checkout.');
+            return;
+        }
+        setCheckoutWarning('');
+        navigate('/checkout');
+    };
 
     if (cartItems.length === 0) {
         return (
@@ -139,9 +159,14 @@ const CartPage = () => {
                                 </div>
                             </div>
 
-                            <Link to="/checkout" className="btn-primary w-full text-center py-4 text-base block">
+                            <button onClick={handleProceedToCheckout} className="btn-primary w-full text-center py-4 text-base block">
                                 Proceed to Checkout
-                            </Link>
+                            </button>
+                            {checkoutWarning ? (
+                                <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
+                                    {checkoutWarning}
+                                </p>
+                            ) : null}
 
                             <div className="mt-6 text-center">
                                 <Link to="/products" className="text-sm text-[var(--text3)] hover:text-[var(--accent)] font-medium transition-colors">

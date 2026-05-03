@@ -274,7 +274,9 @@ export const prescriptionGetHospitalIssued = (params = {}) => api.get(
 // Patient profile
 export const patientCreateProfile = (payload) => api.post('/patient/profile', payload, buildAuthHeaders());
 export const patientGetProfile = () => api.get('/patient/profile', buildAuthHeaders());
+export const patientGetProfiles = () => api.get('/patient/profiles', buildAuthHeaders());
 export const patientUpdateProfile = (payload) => api.put('/patient/profile', payload, buildAuthHeaders());
+export const patientDeleteProfile = (id) => api.delete(`/patient/profile/${id}`, buildAuthHeaders());
 export const patientGenerateUniqueCode = () => api.post('/patient/generate-unique-code', null, buildAuthHeaders());
 export const patientCreatePrescription = (payload) => api.post('/doctors/prescriptions', payload, buildAuthHeaders());
 export const patientConvertTemporary = (patientId) => api.post(`/patient/convert/${patientId}`, null, buildAuthHeaders());
