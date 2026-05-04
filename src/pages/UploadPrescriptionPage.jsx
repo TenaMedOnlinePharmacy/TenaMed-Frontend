@@ -36,7 +36,7 @@ const UploadPrescriptionPage = () => {
     });
 
     const pollPipelineStatus = async (prescriptionId) => {
-        const maxAttempts = 60;
+        const maxAttempts = 120;
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 20) {
             const response = await ocrGetPipelineStatus(prescriptionId);

@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BellRing, ClipboardList, Loader2 } from 'lucide-react';
+import { Client } from '@stomp/stompjs';
 import { manualReviewClaimTask, manualReviewGetTasks } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { getBackendWebSocketUrl } from '../utils/apiOrigin';
@@ -15,11 +16,13 @@ const getTasksArray = (responseData) => {
 const normalizeServerEvent = (raw) => {
     if (!raw || typeof raw !== 'object') return null;
     const eventType = raw.type || raw.eventType || raw.action;
-    const taskPayload = raw.task || raw.payload || raw.data || raw;
-    if (!eventType || !taskPayload) return null;
+    const taskPayload = raw.task || raw.payload || raw.data || null;
+    const taskId = raw.taskId || taskPayload?.id || raw.id || null;
+    if (!eventType) return null;
     return {
         type: String(eventType).toUpperCase(),
         task: taskPayload,
+        taskId,
     };
 };
 
@@ -43,7 +46,7 @@ const ManualReviewTaskListPage = () => {
         [tasks],
     );
 
-    const loadTasks = async () => {
+    const loadTasks = useCallback(async () => {
         setIsLoading(true);
         setErrorMsg('');
         try {
@@ -55,81 +58,88 @@ const ManualReviewTaskListPage = () => {
         } finally {
             setIsLoading(false);
         }
-    };
-
-    useEffect(() => {
-        loadTasks();
     }, []);
 
     useEffect(() => {
-        let socket;
-        try {
-            socket = new WebSocket(getBackendWebSocketUrl('/ws'));
-        } catch {
-            return undefined;
-        }
+        loadTasks();
+    }, [loadTasks]);
 
-        socket.onopen = () => {
-            try {
-                socket.send(JSON.stringify({ action: 'SUBSCRIBE', topic: '/topic/tasks' }));
-            } catch {
-                // Keep listening even if server does not require explicit subscribe payload.
-            }
-        };
+    useEffect(() => {
+        const client = new Client({
+            brokerURL: getBackendWebSocketUrl('/ws'),
+            reconnectDelay: 5000,
+            heartbeatIncoming: 10000,
+            heartbeatOutgoing: 10000,
+        });
 
-        socket.onmessage = (event) => {
-            try {
-                const parsed = JSON.parse(event.data);
-                const normalized = normalizeServerEvent(parsed);
-                if (!normalized) return;
+        client.debug = () => {};
 
-                if (normalized.type === 'TASK_CREATED') {
-                    const incoming = normalized.task;
-                    const incomingId = incoming?.id;
-                    if (!incomingId) return;
-                    setTasks((prev) => {
-                        const exists = prev.some((task) => task?.id === incomingId);
-                        if (exists) {
-                            return prev.map((task) => (task?.id === incomingId ? { ...task, ...incoming } : task));
-                        }
-                        return [incoming, ...prev];
-                    });
-                    return;
-                }
+        client.onConnect = () => {
+            client.subscribe('/topic/tasks', (message) => {
+                try {
+                    const parsed = JSON.parse(message.body);
+                    const normalized = normalizeServerEvent(parsed);
+                    if (!normalized) return;
 
-                if (normalized.type === 'TASK_CLAIMED') {
-                    const claimedTask = normalized.task;
-                    const claimedId = claimedTask?.id;
-                    if (!claimedId) return;
-
-                    const assignedTo = String(claimedTask?.assignedTo || '').toLowerCase();
-                    const isCurrentUserClaim = assignedTo && assignedTo === String(userEmail || '').toLowerCase();
-                    if (isCurrentUserClaim) {
-                        setTasks((prev) => prev.map((task) => (task?.id === claimedId ? { ...task, ...claimedTask } : task)));
-                    } else {
-                        setTasks((prev) => prev.filter((task) => task?.id !== claimedId));
+                    if (!normalized.task) {
+                        loadTasks();
+                        return;
                     }
-                    return;
-                }
 
-                if (normalized.type === 'TASK_COMPLETED') {
-                    const completedId = normalized.task?.id;
-                    if (!completedId) return;
-                    setTasks((prev) => prev.filter((task) => task?.id !== completedId));
+                    if (normalized.type === 'TASK_CREATED') {
+                        const incoming = normalized.task;
+                        const incomingId = incoming?.id || normalized.taskId;
+                        if (!incomingId) return;
+                        setTasks((prev) => {
+                            const exists = prev.some((task) => task?.id === incomingId);
+                            if (exists) {
+                                return prev.map((task) => (task?.id === incomingId ? { ...task, ...incoming } : task));
+                            }
+                            return [incoming, ...prev];
+                        });
+                        return;
+                    }
+
+                    if (normalized.type === 'TASK_CLAIMED') {
+                        const claimedTask = normalized.task;
+                        const claimedId = claimedTask?.id || normalized.taskId;
+                        if (!claimedId) return;
+
+                        const assignedTo = String(claimedTask?.assignedTo || '').toLowerCase();
+                        const isCurrentUserClaim = assignedTo && assignedTo === String(userEmail || '').toLowerCase();
+                        if (isCurrentUserClaim) {
+                            setTasks((prev) => prev.map((task) => (task?.id === claimedId ? { ...task, ...claimedTask } : task)));
+                        } else {
+                            setTasks((prev) => prev.filter((task) => task?.id !== claimedId));
+                        }
+                        return;
+                    }
+
+                    if (normalized.type === 'TASK_COMPLETED') {
+                        const completedId = normalized.task?.id || normalized.taskId;
+                        if (!completedId) return;
+                        setTasks((prev) => prev.filter((task) => task?.id !== completedId));
+                    }
+                } catch {
+                    // Ignore malformed WS payloads so UI stays usable.
                 }
-            } catch {
-                // Ignore malformed WS payloads so UI stays usable.
-            }
+            });
         };
+
+        client.onWebSocketError = () => {
+            setErrorMsg((prev) => prev || 'Realtime updates are unavailable. Check the ngrok tunnel or backend server.');
+        };
+
+        client.onStompError = () => {
+            setErrorMsg((prev) => prev || 'Realtime updates are unavailable. Check the ngrok tunnel or backend server.');
+        };
+
+        client.activate();
 
         return () => {
-            try {
-                socket?.close();
-            } catch {
-                // ignore
-            }
+            client.deactivate();
         };
-    }, [userEmail]);
+    }, [loadTasks, userEmail]);
 
     const handleClaim = async (taskId) => {
         if (!taskId) return;
