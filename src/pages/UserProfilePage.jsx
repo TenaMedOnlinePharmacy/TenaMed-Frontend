@@ -1,16 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { User, Package, MapPin, Phone, Mail, Clock, CheckCircle, Truck, XCircle, Search, Users, Plus, Calendar, Activity, Droplet } from 'lucide-react';
 import { getOrders } from '../data/orderStore';
-import { patientCreateProfile, patientGetProfiles, patientUpdateProfile, patientDeleteProfile } from '../api/axios';
+import { identityGetMe, patientCreateProfile, patientGetProfiles, patientUpdateProfile, patientDeleteProfile } from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { resolveFrontendRoleFromClaims } from '../utils/authRole';
 
 const UserProfilePage = () => {
+    const { userRole, setRole } = useAuth();
+    const fallbackRole = userRole && userRole !== 'guest' ? userRole : 'customer';
     const [activeTab, setActiveTab] = useState('profile'); // profile, orders, patients
     const [user, setUser] = useState({
-        name: 'John Doe',
-        email: 'john.doe@example.com',
-        phone: '+251 911 223344',
-        address: 'Bole, Addis Ababa'
+        name: '',
+        email: '',
+        phone: '',
+        address: ''
     });
+    const [resolvedRole, setResolvedRole] = useState(fallbackRole);
+    const [isLoadingUser, setIsLoadingUser] = useState(false);
+    const [userError, setUserError] = useState('');
 
     const [orders] = useState(getOrders());
 
@@ -19,6 +26,9 @@ const UserProfilePage = () => {
     const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
     const [showAddForm, setShowAddForm] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [editingProfileId, setEditingProfileId] = useState(null);
+    const [profileActionError, setProfileActionError] = useState('');
+    const [profileActionMessage, setProfileActionMessage] = useState('');
     const [newPatient, setNewPatient] = useState({
         name: '',
         dateOfBirth: '',
@@ -31,14 +41,129 @@ const UserProfilePage = () => {
         allergens: ''
     });
 
+    const normalizeValue = (value) => {
+        if (value === null || value === undefined) {
+            return '';
+        }
+        if (typeof value === 'number') {
+            return String(value);
+        }
+        if (typeof value === 'string') {
+            return value.trim();
+        }
+        return '';
+    };
+
+    const pickFirstValue = (...values) => {
+        for (const value of values) {
+            const normalized = normalizeValue(value);
+            if (normalized) {
+                return normalized;
+            }
+        }
+        return '';
+    };
+
+    const getRoleCandidates = (data) => {
+        if (Array.isArray(data?.roles)) {
+            return data.roles;
+        }
+        if (Array.isArray(data?.authorities)) {
+            return data.authorities;
+        }
+        if (Array.isArray(data?.claims?.roles)) {
+            return data.claims.roles;
+        }
+        if (Array.isArray(data?.user?.roles)) {
+            return data.user.roles;
+        }
+        if (data?.role) {
+            return [data.role];
+        }
+        return [];
+    };
+
+    const normalizeRoles = (candidates) => {
+        return candidates.flatMap((role) => {
+            if (!role) {
+                return [];
+            }
+            if (typeof role === 'string') {
+                return [role];
+            }
+            if (typeof role === 'object') {
+                return [role.authority, role.role, role.name].filter(Boolean);
+            }
+            return [];
+        });
+    };
+
+    const mapIdentityToUser = (data) => ({
+        name: pickFirstValue(data?.fullName, data?.name, data?.username, data?.email, 'User'),
+        email: pickFirstValue(data?.email, data?.username),
+        phone: pickFirstValue(data?.phone, data?.phoneNumber, data?.mobile),
+        address: pickFirstValue(data?.address, data?.location, data?.city),
+    });
+
+    const fetchUser = useCallback(async () => {
+        setIsLoadingUser(true);
+        setUserError('');
+        try {
+            const response = await identityGetMe();
+            const data = response?.data || {};
+            const roles = normalizeRoles(getRoleCandidates(data));
+            const nextRole = resolveFrontendRoleFromClaims(roles, fallbackRole);
+            if (nextRole && nextRole !== userRole) {
+                setRole(nextRole);
+            }
+            setResolvedRole(nextRole);
+            setUser(mapIdentityToUser(data));
+        } catch (error) {
+            console.error('Failed to fetch user profile:', error);
+            setUserError('Unable to load your profile details.');
+        } finally {
+            setIsLoadingUser(false);
+        }
+    }, [fallbackRole, setRole, userRole]);
+
+    const canViewOrders = resolvedRole === 'customer';
+    const canManagePatients = resolvedRole === 'customer';
+
+    const roleLabelMap = {
+        customer: 'Customer',
+        pharmacy: 'Pharmacy',
+        pharmacist: 'Pharmacist',
+        hospital: 'Hospital',
+        doctor: 'Doctor',
+        admin: 'Admin',
+        ADMIN_PHARMACIST: 'Admin Pharmacist',
+        admin_pharmacist: 'Admin Pharmacist',
+        'admin-pharmacist': 'Admin Pharmacist',
+    };
+    const roleLabel = roleLabelMap[resolvedRole] || resolvedRole || 'Customer';
+
     useEffect(() => {
-        if (activeTab === 'patients') {
+        fetchUser();
+    }, [fetchUser]);
+
+    useEffect(() => {
+        if (!canViewOrders && activeTab === 'orders') {
+            setActiveTab('profile');
+        }
+        if (!canManagePatients && activeTab === 'patients') {
+            setActiveTab('profile');
+        }
+    }, [activeTab, canManagePatients, canViewOrders]);
+
+    useEffect(() => {
+        if (activeTab === 'patients' && canManagePatients) {
             fetchProfiles();
         }
-    }, [activeTab]);
+    }, [activeTab, canManagePatients]);
 
     const fetchProfiles = async () => {
         setIsLoadingProfiles(true);
+        setProfileActionError('');
         try {
             const response = await patientGetProfiles();
             setProfiles(response.data || []);
@@ -49,10 +174,36 @@ const UserProfilePage = () => {
         }
     };
 
+    const getProfileTimestamp = (profile) => {
+        const updated = profile?.updatedAt ? new Date(profile.updatedAt).getTime() : 0;
+        const created = profile?.createdAt ? new Date(profile.createdAt).getTime() : 0;
+        const best = Math.max(updated, created);
+        return Number.isNaN(best) ? 0 : best;
+    };
+
+    const getLatestProfileId = () => {
+        if (!profiles.length) {
+            return null;
+        }
+        return profiles.reduce((latest, profile) => {
+            if (!latest) {
+                return profile;
+            }
+            return getProfileTimestamp(profile) > getProfileTimestamp(latest) ? profile : latest;
+        }, profiles[0])?.id || null;
+    };
+
     const handleAddPatient = async (e) => {
         e.preventDefault();
+        setProfileActionError('');
+        setProfileActionMessage('');
         try {
             if (isEditing) {
+                const latestProfileId = getLatestProfileId();
+                if (!editingProfileId || editingProfileId !== latestProfileId) {
+                    setProfileActionError('Only the most recent profile can be updated.');
+                    return;
+                }
                 const updatePayload = {
                     name: newPatient.name,
                     dateOfBirth: newPatient.dateOfBirth,
@@ -64,6 +215,7 @@ const UserProfilePage = () => {
                     uniqueCode: newPatient.uniqueCode || null,
                 };
                 await patientUpdateProfile(updatePayload);
+                setProfileActionMessage('Profile updated successfully.');
             } else {
                 const createPayload = {
                     name: newPatient.name,
@@ -77,9 +229,11 @@ const UserProfilePage = () => {
                     allergens: newPatient.allergens ? newPatient.allergens.split(',').map(a => a.trim()).filter(a => a) : []
                 };
                 await patientCreateProfile(createPayload);
+                setProfileActionMessage('Profile created successfully.');
             }
             setShowAddForm(false);
             setIsEditing(false);
+            setEditingProfileId(null);
             setNewPatient({
                 name: '',
                 dateOfBirth: '',
@@ -94,10 +248,19 @@ const UserProfilePage = () => {
             fetchProfiles();
         } catch (error) {
             console.error('Failed to save patient profile:', error);
+            setProfileActionError('Failed to save patient profile.');
         }
     };
 
     const handleEditClick = (profile) => {
+        const latestProfileId = getLatestProfileId();
+        if (latestProfileId && profile?.id !== latestProfileId) {
+            setProfileActionError('Only the most recent profile can be updated.');
+            return;
+        }
+        setProfileActionError('');
+        setProfileActionMessage('');
+        setEditingProfileId(profile.id || null);
         setNewPatient({
             name: profile.name || '',
             dateOfBirth: profile.dateOfBirth || '',
@@ -115,9 +278,12 @@ const UserProfilePage = () => {
 
     const handleDeleteProfile = async (profileId) => {
         if (!window.confirm("Are you sure you want to delete this profile?")) return;
+        setProfileActionError('');
+        setProfileActionMessage('');
         try {
             await patientDeleteProfile(profileId);
             fetchProfiles();
+            setProfileActionMessage('Profile deleted successfully.');
         } catch (error) {
             console.error('Failed to delete patient profile:', error);
             alert("Failed to delete the profile. The backend might not support this operation yet.");
@@ -135,8 +301,11 @@ const UserProfilePage = () => {
                                 <div className="w-24 h-24 bg-[rgba(var(--accent-rgb),0.1)] rounded-full flex items-center justify-center text-[var(--accent)] mb-4 shadow-[var(--glow)] border border-[rgba(var(--accent-rgb),0.2)]">
                                     <User className="w-10 h-10" />
                                 </div>
-                                <h2 className="font-syne font-bold text-[var(--text)] text-xl tracking-tight">{user.name}</h2>
-                                <p className="text-[var(--text3)] text-sm">{user.email}</p>
+                                <h2 className="font-syne font-bold text-[var(--text)] text-xl tracking-tight">{user.name || 'User'}</h2>
+                                <p className="text-[var(--text3)] text-sm">{user.email || '—'}</p>
+                                <span className="mt-3 px-3 py-1 rounded-full text-xs font-semibold bg-[rgba(var(--accent-rgb),0.12)] text-[var(--accent)] border border-[rgba(var(--accent-rgb),0.2)]">
+                                    {roleLabel}
+                                </span>
                             </div>
                             <nav className="p-3 space-y-1">
                                 <button
@@ -145,18 +314,22 @@ const UserProfilePage = () => {
                                 >
                                     <User className="w-5 h-5" /> My Profile
                                 </button>
-                                <button
-                                    onClick={() => setActiveTab('orders')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'orders' ? 'bg-[var(--surface2)] text-[var(--accent)] shadow-sm' : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--surface2)]'}`}
-                                >
-                                    <Package className="w-5 h-5" /> My Orders
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('patients')}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'patients' ? 'bg-[var(--surface2)] text-[var(--accent)] shadow-sm' : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--surface2)]'}`}
-                                >
-                                    <Users className="w-5 h-5" /> Patient Profiles
-                                </button>
+                                {canViewOrders && (
+                                    <button
+                                        onClick={() => setActiveTab('orders')}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'orders' ? 'bg-[var(--surface2)] text-[var(--accent)] shadow-sm' : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--surface2)]'}`}
+                                    >
+                                        <Package className="w-5 h-5" /> My Orders
+                                    </button>
+                                )}
+                                {canManagePatients && (
+                                    <button
+                                        onClick={() => setActiveTab('patients')}
+                                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${activeTab === 'patients' ? 'bg-[var(--surface2)] text-[var(--accent)] shadow-sm' : 'text-[var(--text2)] hover:text-[var(--text)] hover:bg-[var(--surface2)]'}`}
+                                    >
+                                        <Users className="w-5 h-5" /> Patient Profiles
+                                    </button>
+                                )}
                             </nav>
                         </div>
                     </div>
@@ -165,7 +338,15 @@ const UserProfilePage = () => {
                     <div className="lg:col-span-3">
                         {activeTab === 'profile' ? (
                             <div className="nova-card p-8 animate-in fade-in slide-in-from-bottom-2">
-                                <h2 className="font-syne text-2xl font-bold text-[var(--text)] mb-8 tracking-tight">Personal Information</h2>
+                                <div className="flex flex-col gap-2 mb-8">
+                                    <h2 className="font-syne text-2xl font-bold text-[var(--text)] tracking-tight">Personal Information</h2>
+                                    {isLoadingUser && (
+                                        <p className="text-sm text-[var(--text3)]">Loading profile details...</p>
+                                    )}
+                                    {userError && (
+                                        <p className="text-sm text-red-500">{userError}</p>
+                                    )}
+                                </div>
                                 <form className="space-y-6 max-w-2xl">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
@@ -180,6 +361,15 @@ const UserProfilePage = () => {
                                             <div className="relative">
                                                 <Mail className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
                                                 <input type="email" value={user.email} readOnly className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Account Role</label>
+                                            <div className="relative">
+                                                <Users className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
+                                                <input type="text" value={roleLabel} readOnly className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
                                             </div>
                                         </div>
                                     </div>
@@ -206,7 +396,7 @@ const UserProfilePage = () => {
                                     </div>
                                 </form>
                             </div>
-                        ) : activeTab === 'orders' ? (
+                        ) : activeTab === 'orders' && canViewOrders ? (
                             <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2">
                                 <div className="p-6 border-b border-[var(--border2)] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                                     <h2 className="font-syne text-2xl font-bold text-[var(--text)] tracking-tight">Order History</h2>
@@ -259,11 +449,11 @@ const UserProfilePage = () => {
                                     </table>
                                 </div>
                             </div>
-                        ) : (
+                        ) : activeTab === 'patients' && canManagePatients ? (
                             <div className="nova-card p-8 animate-in fade-in slide-in-from-bottom-2">
                                 <div className="flex justify-between items-center mb-8">
                                     <h2 className="font-syne text-2xl font-bold text-[var(--text)] tracking-tight">Patient Profiles</h2>
-                                    {!showAddForm && profiles.length === 0 && (
+                                    {!showAddForm && (
                                         <button 
                                             onClick={() => {
                                                 setIsEditing(false);
@@ -272,11 +462,21 @@ const UserProfilePage = () => {
                                             }}
                                             className="btn-primary px-5 py-2.5 rounded-xl font-medium flex items-center gap-2"
                                         >
-                                            <Plus className="w-5 h-5" /> Add Profile
+                                            <Plus className="w-5 h-5" /> Add Patient
                                         </button>
                                     )}
                                 </div>
 
+                                {profileActionError && (
+                                    <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                                        {profileActionError}
+                                    </div>
+                                )}
+                                {profileActionMessage && (
+                                    <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600">
+                                        {profileActionMessage}
+                                    </div>
+                                )}
                                 {showAddForm ? (
                                     <form onSubmit={handleAddPatient} className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -333,7 +533,7 @@ const UserProfilePage = () => {
                                         </div>
                                         <div className="flex gap-4 pt-4">
                                             <button type="submit" className="btn-primary px-8 py-3 rounded-xl font-medium">{isEditing ? 'Update Profile' : 'Save Profile'}</button>
-                                            <button type="button" onClick={() => { setShowAddForm(false); setIsEditing(false); }} className="px-8 py-3 rounded-xl font-medium border border-[var(--border2)] text-[var(--text2)] hover:bg-[var(--surface2)]">Cancel</button>
+                                            <button type="button" onClick={() => { setShowAddForm(false); setIsEditing(false); setEditingProfileId(null); }} className="px-8 py-3 rounded-xl font-medium border border-[var(--border2)] text-[var(--text2)] hover:bg-[var(--surface2)]">Cancel</button>
                                         </div>
                                     </form>
                                 ) : (
@@ -348,12 +548,13 @@ const UserProfilePage = () => {
                                                 <h3 className="text-lg font-medium text-[var(--text)] mb-2">No Profiles Found</h3>
                                                 <p className="text-[var(--text2)] mb-6">You haven't added any patient profiles yet.</p>
                                                 <button onClick={() => { setIsEditing(false); setShowAddForm(true); }} className="btn-primary px-6 py-2.5 rounded-xl font-medium inline-flex items-center gap-2">
-                                                    <Plus className="w-5 h-5" /> Create Profile
+                                                    <Plus className="w-5 h-5" /> Add Patient
                                                 </button>
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                                 {profiles.map((profile, index) => (
+                                                    
                                                     <div key={index} className="bg-[var(--surface2)] rounded-2xl p-6 border border-[var(--border2)] hover:border-[var(--accent)] transition-colors">
                                                         <div className="flex items-start justify-between mb-4">
                                                             <div className="flex items-center gap-3">
@@ -366,12 +567,16 @@ const UserProfilePage = () => {
                                                                 </div>
                                                             </div>
                                                             <div className="flex flex-col gap-2">
-                                                                <button 
-                                                                    onClick={() => handleEditClick(profile)}
-                                                                    className="text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm font-medium px-3 py-1.5 rounded-lg border border-[var(--border2)] hover:border-[var(--accent)] transition-colors"
-                                                                >
-                                                                    Update Profile
-                                                                </button>
+                                                                {profile?.id === getLatestProfileId() ? (
+                                                                    <button 
+                                                                        onClick={() => handleEditClick(profile)}
+                                                                        className="text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm font-medium px-3 py-1.5 rounded-lg border border-[var(--border2)] hover:border-[var(--accent)] transition-colors"
+                                                                    >
+                                                                        Update Profile
+                                                                    </button>
+                                                                ) : (
+                                                                    <span className="text-xs text-[var(--text3)]">Latest profile only</span>
+                                                                )}
                                                                 <button 
                                                                     onClick={() => handleDeleteProfile(profile.id)}
                                                                     className="text-red-500 hover:text-red-600 text-sm font-medium px-3 py-1.5 rounded-lg border border-red-200 hover:border-red-500 transition-colors"
@@ -400,6 +605,11 @@ const UserProfilePage = () => {
                                         )}
                                     </>
                                 )}
+                            </div>
+                        ) : (
+                            <div className="nova-card p-8 animate-in fade-in slide-in-from-bottom-2">
+                                <h2 className="font-syne text-2xl font-bold text-[var(--text)] mb-4 tracking-tight">Access Limited</h2>
+                                <p className="text-[var(--text2)]">This section is available for customer accounts.</p>
                             </div>
                         )}
                     </div>

@@ -2,12 +2,47 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
-import { cartCheckout, paymentInitialize } from '../api/axios';
+import { cartCheckout, paymentInitialize, patientCheckMedicineSafety, patientGetProfiles } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { saveOrder } from '../data/orderStore';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
 
 const PENDING_PAYMENT_KEY = 'tenamed_pending_payment';
+const CART_META_KEY = 'tenamed_cart_meta';
+
+const buildMetadataKey = (medicineName, pharmacyName) => {
+    const medicine = String(medicineName || '').trim().toLowerCase();
+    const pharmacy = String(pharmacyName || '').trim().toLowerCase();
+    if (!medicine && !pharmacy) {
+        return '';
+    }
+    return `${medicine}::${pharmacy}`;
+};
+
+const readCartMetadata = () => {
+    try {
+        const raw = localStorage.getItem(CART_META_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+};
+
+const resolveMedicineId = (item, cartMetadata) => {
+    const directId = item?.productId || item?.medicineId;
+    if (directId) {
+        return directId;
+    }
+
+    const metadataKey = buildMetadataKey(item?.name || item?.medicineName, item?.pharmacy || item?.pharmacyName);
+    const metadata =
+        cartMetadata?.[item?.id] ||
+        cartMetadata?.[item?.cartItemId] ||
+        cartMetadata?.[metadataKey] ||
+        null;
+
+    return metadata?.productId || null;
+};
 
 const CheckoutPage = () => {
     const { cartItems, getCartTotal, clearCart } = useCart();
@@ -17,6 +52,14 @@ const CheckoutPage = () => {
     const [paymentMethod, setPaymentMethod] = useState('card');
     const [isProcessing, setIsProcessing] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
+    const [patientProfiles, setPatientProfiles] = useState([]);
+    const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+    const [profileError, setProfileError] = useState('');
+    const [selectedProfileId, setSelectedProfileId] = useState('');
+    const [safetyWarnings, setSafetyWarnings] = useState([]);
+    const [safetyError, setSafetyError] = useState('');
+    const [isCheckingSafety, setIsCheckingSafety] = useState(false);
+    const [safetyApproved, setSafetyApproved] = useState(false);
     const [shippingData, setShippingData] = useState({
         firstName: '',
         lastName: '',
@@ -32,6 +75,40 @@ const CheckoutPage = () => {
         }
     }, [cartItems.length, navigate]);
 
+    useEffect(() => {
+        if (userEmail && !shippingData.email) {
+            setShippingData((prev) => ({ ...prev, email: userEmail }));
+        }
+    }, [userEmail, shippingData.email]);
+
+    useEffect(() => {
+        const fetchProfiles = async () => {
+            setIsLoadingProfiles(true);
+            setProfileError('');
+            try {
+                const response = await patientGetProfiles();
+                const list = Array.isArray(response?.data) ? response.data : [];
+                setPatientProfiles(list);
+                if (!selectedProfileId && list.length > 0) {
+                    setSelectedProfileId(String(list[0].id));
+                }
+            } catch (error) {
+                console.error('Failed to load patient profiles:', error);
+                setProfileError('Unable to load patient profiles.');
+            } finally {
+                setIsLoadingProfiles(false);
+            }
+        };
+
+        fetchProfiles();
+    }, []);
+
+    useEffect(() => {
+        setSafetyWarnings([]);
+        setSafetyError('');
+        setSafetyApproved(false);
+    }, [selectedProfileId, cartItems]);
+
     if (cartItems.length === 0) {
         return null;
     }
@@ -40,9 +117,86 @@ const CheckoutPage = () => {
     const shipping = subtotal > 50 ? 0 : 5.00;
     const total = subtotal + shipping;
 
+    const getSelectedProfile = () => {
+        return patientProfiles.find((profile) => String(profile.id) === String(selectedProfileId)) || null;
+    };
+
+    const buildSafetyCheckItems = () => {
+        const cartMetadata = readCartMetadata();
+
+        return cartItems.map((item) => ({
+            item,
+            medicineId: resolveMedicineId(item, cartMetadata),
+        }));
+    };
+
+    const runSafetyCheck = async () => {
+        if (!selectedProfileId) {
+            setSafetyError('Please select a patient profile before continuing.');
+            return false;
+        }
+
+        const itemsToCheck = buildSafetyCheckItems();
+        const missingIds = itemsToCheck.filter((entry) => !entry.medicineId);
+        if (missingIds.length > 0) {
+            const missingNames = missingIds.map((entry) => entry.item?.name || entry.item?.medicineName || 'Unknown item').join(', ');
+            setSafetyError(
+                missingIds.length === 1
+                    ? `Unable to verify allergy safety for ${missingNames}. Please re-add this item to your cart.`
+                    : `Unable to verify allergy safety for ${missingNames}. Please re-add the affected items to your cart.`,
+            );
+            return false;
+        }
+
+        setIsCheckingSafety(true);
+        setSafetyError('');
+        setSafetyWarnings([]);
+
+        try {
+            const results = await Promise.all(itemsToCheck.map(async ({ item, medicineId }) => {
+                const response = await patientCheckMedicineSafety(selectedProfileId, medicineId);
+                const matches = Array.isArray(response?.data) ? response.data : [];
+                return { item, matches };
+            }));
+
+            const warnings = results.filter((result) => result.matches.length > 0);
+            if (warnings.length > 0) {
+                setSafetyWarnings(warnings);
+                setSafetyApproved(false);
+                setSafetyError('Potential allergens detected. Please review before continuing.');
+                return false;
+            }
+
+            setSafetyApproved(true);
+            return true;
+        } catch (error) {
+            console.error('Safety check failed:', error);
+            setSafetyError('Safety check failed. Please try again.');
+            return false;
+        } finally {
+            setIsCheckingSafety(false);
+        }
+    };
+
+    const handleContinueToPayment = async (event) => {
+        event.preventDefault();
+        const safe = await runSafetyCheck();
+        if (safe) {
+            setStep(2);
+        }
+    };
+
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
         setErrorMsg('');
+
+        if (!safetyApproved) {
+            const safe = await runSafetyCheck();
+            if (!safe) {
+                setStep(1);
+                return;
+            }
+        }
 
         if (paymentMethod === 'chapa') {
             setIsProcessing(true);
@@ -156,10 +310,7 @@ const CheckoutPage = () => {
                                     </h2>
                                     <form
                                         className="space-y-4"
-                                        onSubmit={(e) => {
-                                            e.preventDefault();
-                                            setStep(2);
-                                        }}
+                                        onSubmit={handleContinueToPayment}
                                     >
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -233,9 +384,82 @@ const CheckoutPage = () => {
                                                 />
                                             </div>
                                         </div>
+                                        <div className="pt-4 border-t border-[var(--border2)] space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <h3 className="text-base font-semibold text-[var(--text)]">Patient Profile</h3>
+                                                    <p className="text-xs text-[var(--text3)]">Select the profile used for allergy safety checks.</p>
+                                                </div>
+                                                {patientProfiles.length === 0 && !isLoadingProfiles && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate('/profile')}
+                                                        className="text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)]"
+                                                    >
+                                                        Add Profile
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {isLoadingProfiles ? (
+                                                <p className="text-sm text-[var(--text3)]">Loading patient profiles...</p>
+                                            ) : profileError ? (
+                                                <p className="text-sm text-red-500">{profileError}</p>
+                                            ) : patientProfiles.length === 0 ? (
+                                                <div className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] p-4 text-sm text-[var(--text2)]">
+                                                    No patient profiles found. Please add one before checkout.
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <select
+                                                        required
+                                                        value={selectedProfileId}
+                                                        onChange={(e) => setSelectedProfileId(e.target.value)}
+                                                        className="w-full p-3 bg-[var(--bg)] border border-[var(--border2)] rounded-lg outline-none text-[var(--text)] focus:border-[var(--accent)] transition-colors"
+                                                    >
+                                                        {patientProfiles.map((profile) => (
+                                                            <option key={profile.id} value={profile.id}>
+                                                                {profile.name || 'Patient'} {profile.dateOfBirth ? `• ${profile.dateOfBirth}` : ''}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {getSelectedProfile()?.allergies?.length > 0 ? (
+                                                        <div className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-4 py-3 text-xs text-[var(--text2)]">
+                                                            Allergies: {getSelectedProfile().allergies.map((allergy) => allergy.allergenName).join(', ')}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-4 py-3 text-xs text-[var(--text3)]">
+                                                            No known allergies listed for this profile.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {safetyError && (
+                                                <div className="rounded-lg border border-[var(--danger-border)] bg-[rgba(var(--danger-rgb),0.1)] px-4 py-3 text-sm text-[var(--danger)]">
+                                                    {safetyError}
+                                                </div>
+                                            )}
+                                            {safetyWarnings.length > 0 && (
+                                                <div className="rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 space-y-2">
+                                                    {safetyWarnings.map((warning) => (
+                                                        <div key={warning.item.id}>
+                                                            <span className="font-semibold">{warning.item.name}:</span>{' '}
+                                                            {warning.matches.map((match) => `${match.allergenName} (${match.severity || 'UNKNOWN'})`).join(', ')}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="pt-4">
-                                            <button type="submit" className="w-full btn-primary py-3 rounded-lg flex items-center justify-center">
-                                                Continue to Payment
+                                            <button
+                                                type="submit"
+                                                disabled={isCheckingSafety || isLoadingProfiles || patientProfiles.length === 0}
+                                                className={`w-full py-3 rounded-lg flex items-center justify-center font-semibold transition-colors ${
+                                                    isCheckingSafety || isLoadingProfiles || patientProfiles.length === 0
+                                                        ? 'bg-[var(--surface3)] text-[var(--text3)] cursor-not-allowed'
+                                                        : 'btn-primary'
+                                                }`}
+                                            >
+                                                {isCheckingSafety ? 'Checking safety...' : 'Continue to Payment'}
                                             </button>
                                         </div>
                                     </form>

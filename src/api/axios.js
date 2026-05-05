@@ -93,6 +93,7 @@ export const authVerifyOtp = (payload) => api.post('/auth/otp/verify', payload, 
 // Identity
 export const identityRegister = (payload) => api.post('/identity/register', payload, buildAuthHeaders());
 export const identityLogin = (payload) => api.post('/identity/login', payload, buildAuthHeaders());
+export const identityGetMe = () => apiRoot.get('/api/identity/me', buildAuthHeaders());
 
 // Admin users
 export const adminGetUser = (id) => api.get(`/admin/users/${id}`, buildAuthHeaders());
@@ -276,6 +277,10 @@ export const patientGetProfile = () => api.get('/patient/profile', buildAuthHead
 export const patientGetProfiles = () => api.get('/patient/profiles', buildAuthHeaders());
 export const patientUpdateProfile = (payload) => api.put('/patient/profile', payload, buildAuthHeaders());
 export const patientDeleteProfile = (id) => api.delete(`/patient/profile/${id}`, buildAuthHeaders());
+export const patientCheckMedicineSafety = (profileId, medicineId) => apiRoot.get(
+    `/api/patient/profile/${profileId}/check-safety/${medicineId}`,
+    buildAuthHeaders(),
+);
 export const patientGenerateUniqueCode = () => api.post('/patient/generate-unique-code', null, buildAuthHeaders());
 export const patientCreatePrescription = (payload) => api.post('/doctors/prescriptions', payload, buildAuthHeaders());
 export const patientConvertTemporary = (patientId) => api.post(`/patient/convert/${patientId}`, null, buildAuthHeaders());
