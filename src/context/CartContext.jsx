@@ -40,6 +40,7 @@ const mapServerCartToUi = (serverCart, metadataByProductId = {}) => {
 
     return items.map((item) => {
         const productId = item?.productId || null;
+        const medicineId = item?.medicineId || null;
         const serverName = item?.brandName || item?.medicineName || '';
         const metadataById = productId ? metadataByProductId[productId] : null;
         const metadataByName = metadataByProductId[buildMetadataKey(serverName, item?.pharmacyName)] || null;
@@ -55,6 +56,7 @@ const mapServerCartToUi = (serverCart, metadataByProductId = {}) => {
             id: item?.id || productId || serverName,
             cartItemId: item?.id,
             productId,
+            medicineId: medicineId || metadata?.medicineId || null,
             pharmacyId: item?.pharmacyId,
             prescriptionId: item?.prescriptionId || null,
             quantity,
@@ -70,7 +72,8 @@ const mapServerCartToUi = (serverCart, metadataByProductId = {}) => {
 
 const toMetadata = (product) => {
     const productId = product?.productId || product?.medicineId || null;
-    const medicineName = product?.name || product?.medicineName || '';
+    const medicineId = product?.medicineId || null;
+    const medicineName = product?.name || product?.medicineName || product?.brandName || '';
     const pharmacyName = product?.pharmacy || product?.pharmacyName || '';
     const metadataKey = buildMetadataKey(medicineName, pharmacyName);
 
@@ -81,6 +84,7 @@ const toMetadata = (product) => {
     return {
         key: metadataKey,
         productId,
+        medicineId,
         name: medicineName,
         category: product?.category,
         pharmacy: pharmacyName,

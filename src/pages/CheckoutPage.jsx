@@ -29,19 +29,32 @@ const readCartMetadata = () => {
 };
 
 const resolveMedicineId = (item, cartMetadata) => {
-    const directId = item?.productId || item?.medicineId;
-    if (directId) {
-        return directId;
+    // Use medicineId directly from the item if available
+    if (item?.medicineId) {
+        return item.medicineId;
     }
 
-    const metadataKey = buildMetadataKey(item?.name || item?.medicineName, item?.pharmacy || item?.pharmacyName);
-    const metadata =
-        cartMetadata?.[item?.id] ||
-        cartMetadata?.[item?.cartItemId] ||
-        cartMetadata?.[metadataKey] ||
-        null;
+    // The backend returns brandName and pharmacyName, so search metadata with those
+    const metadataKey = buildMetadataKey(item?.name, item?.pharmacy);
+    const metadata = cartMetadata?.[metadataKey];
 
-    return metadata?.productId || null;
+    if (metadata?.medicineId) {
+        return metadata.medicineId;
+    }
+
+    // Fallback: search all metadata entries for a match on medicine name and pharmacy
+    for (const key in cartMetadata) {
+        const meta = cartMetadata[key];
+        if (
+            meta?.medicineId &&
+            (key === metadataKey ||
+             buildMetadataKey(meta?.name, meta?.pharmacy) === metadataKey)
+        ) {
+            return meta.medicineId;
+        }
+    }
+
+    return null;
 };
 
 const CheckoutPage = () => {
