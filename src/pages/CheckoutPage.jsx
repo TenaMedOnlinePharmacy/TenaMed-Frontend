@@ -73,6 +73,8 @@ const CheckoutPage = () => {
     const [safetyError, setSafetyError] = useState('');
     const [isCheckingSafety, setIsCheckingSafety] = useState(false);
     const [safetyApproved, setSafetyApproved] = useState(false);
+    const [safetyCheckedOnce, setSafetyCheckedOnce] = useState(false);
+    const [safetyNotice, setSafetyNotice] = useState('');
     const [shippingData, setShippingData] = useState({
         firstName: '',
         lastName: '',
@@ -120,6 +122,8 @@ const CheckoutPage = () => {
         setSafetyWarnings([]);
         setSafetyError('');
         setSafetyApproved(false);
+        setSafetyCheckedOnce(false);
+        setSafetyNotice('');
     }, [selectedProfileId, cartItems]);
 
     if (cartItems.length === 0) {
@@ -193,17 +197,29 @@ const CheckoutPage = () => {
 
     const handleContinueToPayment = async (event) => {
         event.preventDefault();
-        const safe = await runSafetyCheck();
-        if (safe) {
-            setStep(2);
+        if (isCheckingSafety) {
+            return;
         }
+
+        if (!safetyCheckedOnce) {
+            const safe = await runSafetyCheck();
+            setSafetyCheckedOnce(true);
+            setSafetyNotice(
+                safe
+                    ? 'No allergens detected. Click Continue to Payment again to proceed.'
+                    : 'Allergy warnings detected. Review the details and click Continue to Payment again to proceed.',
+            );
+            return;
+        }
+
+        setStep(2);
     };
 
     const handlePlaceOrder = async (e) => {
         e.preventDefault();
         setErrorMsg('');
 
-        if (!safetyApproved) {
+        if (!safetyApproved && !safetyCheckedOnce) {
             const safe = await runSafetyCheck();
             if (!safe) {
                 setStep(1);
@@ -449,6 +465,11 @@ const CheckoutPage = () => {
                                             {safetyError && (
                                                 <div className="rounded-lg border border-[var(--danger-border)] bg-[rgba(var(--danger-rgb),0.1)] px-4 py-3 text-sm text-[var(--danger)]">
                                                     {safetyError}
+                                                </div>
+                                            )}
+                                            {!safetyError && safetyNotice && (
+                                                <div className="rounded-lg border border-[var(--border2)] bg-[var(--surface2)] px-4 py-3 text-sm text-[var(--text2)]">
+                                                    {safetyNotice}
                                                 </div>
                                             )}
                                             {safetyWarnings.length > 0 && (
