@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send } from 'lucide-react';
+import { Package, ClipboardList, CheckCircle, XCircle, Plus, Trash2, Edit, Users, Send, Truck } from 'lucide-react';
 import {
+    deliveryDispatch,
+    deliveryListByStatus,
+    deliveryListFailed,
+    deliveryMarkDelivered,
+    deliveryMarkFailed,
     inventoryDeleteBatch,
     inventoryList,
     orderAccept,
@@ -18,11 +23,20 @@ const PharmacistDashboard = () => {
     const { userRole } = useAuth();
     const isPharmacyOwner = userRole === 'pharmacy';
     const isAdminPharmacist = ['ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist'].includes(userRole);
+    const canManageDeliveries = ['pharmacy', 'pharmacist', 'PHARMACIST', 'ADMIN_PHARMACIST', 'admin_pharmacist', 'admin-pharmacist'].includes(userRole);
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const requestedTab = searchParams.get('tab');
 
-    const [activeTab, setActiveTab] = useState(requestedTab === 'team' && isPharmacyOwner ? 'team' : 'orders');
+    const [activeTab, setActiveTab] = useState(() => {
+        if (requestedTab === 'team' && isPharmacyOwner) {
+            return 'team';
+        }
+        if (['orders', 'inventory', 'deliveries'].includes(requestedTab)) {
+            return requestedTab;
+        }
+        return 'orders';
+    });
     const [inventory, setInventory] = useState([]);
     const [isLoadingInventory, setIsLoadingInventory] = useState(false);
     const [inventoryErrorMsg, setInventoryErrorMsg] = useState('');
@@ -31,6 +45,11 @@ const PharmacistDashboard = () => {
     const [isLoadingOrders, setIsLoadingOrders] = useState(false);
     const [ordersErrorMsg, setOrdersErrorMsg] = useState('');
     const [actionLoadingByOrderId, setActionLoadingByOrderId] = useState({});
+    const [deliveries, setDeliveries] = useState([]);
+    const [isLoadingDeliveries, setIsLoadingDeliveries] = useState(false);
+    const [deliveriesErrorMsg, setDeliveriesErrorMsg] = useState('');
+    const [deliveryActionLoadingById, setDeliveryActionLoadingById] = useState({});
+    const [activeDeliveryStatus, setActiveDeliveryStatus] = useState('READY_FOR_DELIVERY');
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteStatusMsg, setInviteStatusMsg] = useState('');
     const [inviteErrorMsg, setInviteErrorMsg] = useState('');
@@ -48,8 +67,18 @@ const PharmacistDashboard = () => {
         }
         if (isTeamRequested && !isPharmacyOwner) {
             setSearchParams({ tab: 'orders' }, { replace: true });
+            setActiveTab('orders');
+            return;
         }
-    }, [isPharmacyOwner, requestedTab, setSearchParams]);
+        if (['orders', 'inventory', 'deliveries'].includes(requestedTab) && requestedTab !== activeTab) {
+            setActiveTab(requestedTab);
+            return;
+        }
+        if (requestedTab && !['orders', 'inventory', 'deliveries', 'team'].includes(requestedTab)) {
+            setSearchParams({ tab: 'orders' }, { replace: true });
+            setActiveTab('orders');
+        }
+    }, [activeTab, isPharmacyOwner, requestedTab, setSearchParams]);
 
     useEffect(() => {
         if (!isPharmacyOwner) {
@@ -98,6 +127,22 @@ const PharmacistDashboard = () => {
         }
     };
 
+    const loadDeliveries = async (status) => {
+        setIsLoadingDeliveries(true);
+        setDeliveriesErrorMsg('');
+
+        try {
+            const response = status === 'FAILED'
+                ? await deliveryListFailed()
+                : await deliveryListByStatus(status);
+            setDeliveries(Array.isArray(response?.data) ? response.data : []);
+        } catch {
+            setDeliveriesErrorMsg('Failed to load deliveries.');
+        } finally {
+            setIsLoadingDeliveries(false);
+        }
+    };
+
     useEffect(() => {
         loadIncomingOrders();
     }, []);
@@ -108,6 +153,13 @@ const PharmacistDashboard = () => {
         }
         loadInventory();
     }, [activeTab]);
+
+    useEffect(() => {
+        if (activeTab !== 'deliveries') {
+            return;
+        }
+        loadDeliveries(activeDeliveryStatus);
+    }, [activeDeliveryStatus, activeTab]);
 
     const pendingStaff = useMemo(() => {
         return staffRows.filter((row) => row?.staffRole === 'PHARMACIST' && !Boolean(row?.isVerified));
@@ -192,6 +244,13 @@ const PharmacistDashboard = () => {
         }));
     };
 
+    const updateDeliveryActionLoading = (deliveryId, value) => {
+        setDeliveryActionLoadingById((prev) => ({
+            ...prev,
+            [deliveryId]: value,
+        }));
+    };
+
     const handleDeleteBatch = async (batchId) => {
         if (!batchId) {
             setInventoryErrorMsg('Missing batch id for deletion.');
@@ -263,6 +322,65 @@ const PharmacistDashboard = () => {
         }
     };
 
+    const handleDispatchDelivery = async (deliveryId) => {
+        if (!deliveryId) {
+            setDeliveriesErrorMsg('Missing delivery id for dispatch.');
+            return;
+        }
+
+        updateDeliveryActionLoading(deliveryId, true);
+        setDeliveriesErrorMsg('');
+        try {
+            await deliveryDispatch(deliveryId);
+            await loadDeliveries(activeDeliveryStatus);
+        } catch (error) {
+            setDeliveriesErrorMsg(error?.response?.data?.error || 'Failed to dispatch delivery.');
+        } finally {
+            updateDeliveryActionLoading(deliveryId, false);
+        }
+    };
+
+    const handleMarkDelivered = async (deliveryId) => {
+        if (!deliveryId) {
+            setDeliveriesErrorMsg('Missing delivery id for completion.');
+            return;
+        }
+
+        updateDeliveryActionLoading(deliveryId, true);
+        setDeliveriesErrorMsg('');
+        try {
+            await deliveryMarkDelivered(deliveryId);
+            await loadDeliveries(activeDeliveryStatus);
+        } catch (error) {
+            setDeliveriesErrorMsg(error?.response?.data?.error || 'Failed to mark delivery as delivered.');
+        } finally {
+            updateDeliveryActionLoading(deliveryId, false);
+        }
+    };
+
+    const handleMarkFailed = async (deliveryId) => {
+        if (!deliveryId) {
+            setDeliveriesErrorMsg('Missing delivery id for failure update.');
+            return;
+        }
+
+        const failureReason = window.prompt('Enter failure reason');
+        if (!failureReason || !failureReason.trim()) {
+            return;
+        }
+
+        updateDeliveryActionLoading(deliveryId, true);
+        setDeliveriesErrorMsg('');
+        try {
+            await deliveryMarkFailed(deliveryId, { reason: failureReason.trim() });
+            await loadDeliveries(activeDeliveryStatus);
+        } catch (error) {
+            setDeliveriesErrorMsg(error?.response?.data?.error || 'Failed to mark delivery as failed.');
+        } finally {
+            updateDeliveryActionLoading(deliveryId, false);
+        }
+    };
+
     const handleApproveStaff = async (staff) => {
         const userId = staff?.userId;
         const pharmacyId = staff?.pharmacyId;
@@ -281,6 +399,52 @@ const PharmacistDashboard = () => {
         } finally {
             updateActionLoading(userId, false);
         }
+    };
+
+    const deliveryStatusTabs = useMemo(() => ([
+        { key: 'READY_FOR_DELIVERY', label: 'Ready' },
+        { key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
+        { key: 'DELIVERED', label: 'Delivered' },
+        { key: 'FAILED', label: 'Failed' },
+    ]), []);
+
+    const deliveryStatusLabels = useMemo(() => ({
+        READY_FOR_DELIVERY: 'Ready for Delivery',
+        OUT_FOR_DELIVERY: 'Out for Delivery',
+        DELIVERED: 'Delivered',
+        FAILED: 'Failed',
+    }), []);
+
+    const deliveryStatusClassMap = useMemo(() => ({
+        READY_FOR_DELIVERY: 'bg-[rgba(234,179,8,0.1)] text-yellow-500 border-[rgba(234,179,8,0.2)]',
+        OUT_FOR_DELIVERY: 'bg-[rgba(59,130,246,0.1)] text-blue-500 border-[rgba(59,130,246,0.2)]',
+        DELIVERED: 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border-[rgba(16,185,129,0.2)]',
+        FAILED: 'bg-[rgba(var(--danger-rgb),0.1)] text-[var(--danger)] border-[var(--danger-border)]',
+    }), []);
+
+    const normalizedDeliveries = useMemo(() => {
+        return deliveries.map((delivery) => ({
+            id: delivery?.id || 'UNKNOWN',
+            orderId: delivery?.orderId || 'UNKNOWN',
+            status: delivery?.status || 'READY_FOR_DELIVERY',
+            deliveryAddress: delivery?.deliveryAddress || 'N/A',
+            dispatchedAt: delivery?.dispatchedAt || null,
+            deliveredAt: delivery?.deliveredAt || null,
+            failureReason: delivery?.failureReason || 'N/A',
+            createdAt: delivery?.createdAt || null,
+            customerPhone: delivery?.customerPhone || 'N/A',
+        }));
+    }, [deliveries]);
+
+    const formatTimestamp = (value) => {
+        if (!value) {
+            return 'N/A';
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return 'N/A';
+        }
+        return date.toLocaleString();
     };
 
     return (
@@ -303,6 +467,12 @@ const PharmacistDashboard = () => {
                             className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'inventory' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface3)]'}`}
                         >
                             Inventory
+                        </button>
+                        <button
+                            onClick={() => setTab('deliveries')}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'deliveries' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface3)]'}`}
+                        >
+                            Deliveries
                         </button>
                         {isPharmacyOwner && (
                             <button
@@ -588,6 +758,149 @@ const PharmacistDashboard = () => {
                                 </tbody>
                             </table>
                         </div>
+                    </div>
+                ) : activeTab === 'deliveries' ? (
+                    <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2 relative z-0">
+                        <div className="p-6 border-b border-[var(--border2)] flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-[var(--surface2)]">
+                            <div>
+                                <h2 className="font-syne text-lg font-bold text-[var(--text)] flex items-center gap-2 tracking-tight">
+                                    <Truck className="text-[var(--accent)]" /> Delivery Management
+                                </h2>
+                                <p className="text-xs text-[var(--text3)] mt-1">Manage dispatches, confirmations, and failed drops.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {deliveryStatusTabs.map((tab) => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setActiveDeliveryStatus(tab.key)}
+                                        className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${activeDeliveryStatus === tab.key ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text3)] hover:text-[var(--text)] hover:bg-[var(--surface3)] border border-[var(--border2)]'}`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {deliveriesErrorMsg && (
+                            <div className="px-6 pt-4 text-sm text-[var(--danger)] bg-[rgba(var(--danger-rgb),0.1)] border-b border-[var(--danger-border)] p-3">
+                                {deliveriesErrorMsg}
+                            </div>
+                        )}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-[var(--surface2)] text-[var(--text2)] text-sm">
+                                    <tr>
+                                        <th className="p-4 font-medium tracking-wide">Delivery ID</th>
+                                        <th className="p-4 font-medium tracking-wide">Order ID</th>
+                                        <th className="p-4 font-medium tracking-wide">Address</th>
+                                        <th className="p-4 font-medium tracking-wide">Customer Phone</th>
+                                        <th className="p-4 font-medium tracking-wide">Created</th>
+                                        <th className="p-4 font-medium tracking-wide">Dispatched</th>
+                                        <th className="p-4 font-medium tracking-wide">Delivered</th>
+                                        <th className="p-4 font-medium tracking-wide">Status</th>
+                                        {activeDeliveryStatus === 'FAILED' && (
+                                            <th className="p-4 font-medium tracking-wide">Failure Reason</th>
+                                        )}
+                                        {canManageDeliveries && (
+                                            <th className="p-4 font-medium tracking-wide">Actions</th>
+                                        )}
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--border2)]">
+                                    {isLoadingDeliveries ? (
+                                        <tr>
+                                            <td
+                                                className="p-8 text-sm text-[var(--text3)] text-center"
+                                                colSpan={8 + (activeDeliveryStatus === 'FAILED' ? 1 : 0) + (canManageDeliveries ? 1 : 0)}
+                                            >
+                                                Loading deliveries...
+                                            </td>
+                                        </tr>
+                                    ) : normalizedDeliveries.length === 0 ? (
+                                        <tr>
+                                            <td
+                                                className="p-8 text-sm text-[var(--text3)] text-center"
+                                                colSpan={8 + (activeDeliveryStatus === 'FAILED' ? 1 : 0) + (canManageDeliveries ? 1 : 0)}
+                                            >
+                                                No deliveries found for {deliveryStatusLabels[activeDeliveryStatus] || 'this status'}.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        normalizedDeliveries.map((delivery) => {
+                                            const isDeliveryActionLoading = Boolean(deliveryActionLoadingById[delivery.id]);
+                                            const canDispatch = ['READY_FOR_DELIVERY', 'FAILED'].includes(delivery.status);
+                                            const canMarkDelivered = delivery.status === 'OUT_FOR_DELIVERY';
+                                            const canMarkFailed = delivery.status === 'OUT_FOR_DELIVERY';
+
+                                            return (
+                                                <tr key={delivery.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors align-top text-sm">
+                                                    <td className="p-4 font-mono text-[var(--accent)] break-all">{delivery.id}</td>
+                                                    <td className="p-4 text-[var(--text2)] font-mono break-all">{delivery.orderId}</td>
+                                                    <td className="p-4 text-[var(--text)] font-medium min-w-[220px]">{delivery.deliveryAddress}</td>
+                                                    <td className="p-4">
+                                                        <span className={`text-sm ${delivery.customerPhone === 'N/A' ? 'text-[var(--text3)]' : 'text-[var(--text)] font-semibold'}`}>
+                                                            {delivery.customerPhone}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-4 text-[var(--text2)]">{formatTimestamp(delivery.createdAt)}</td>
+                                                    <td className="p-4 text-[var(--text2)]">{formatTimestamp(delivery.dispatchedAt)}</td>
+                                                    <td className="p-4 text-[var(--text2)]">{formatTimestamp(delivery.deliveredAt)}</td>
+                                                    <td className="p-4">
+                                                        <span className={`inline-flex w-fit px-3 py-1 rounded-full text-xs font-semibold border ${deliveryStatusClassMap[delivery.status] || 'bg-[var(--surface2)] text-[var(--text)] border-[var(--border2)]'}`}>
+                                                            {deliveryStatusLabels[delivery.status] || delivery.status}
+                                                        </span>
+                                                    </td>
+                                                    {activeDeliveryStatus === 'FAILED' && (
+                                                        <td className="p-4 text-[var(--text2)] min-w-[200px]">{delivery.failureReason}</td>
+                                                    )}
+                                                    {canManageDeliveries && (
+                                                        <td className="p-4">
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {canDispatch && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleDispatchDelivery(delivery.id)}
+                                                                        disabled={isDeliveryActionLoading}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-blue-500 bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.2)] hover:bg-[rgba(59,130,246,0.15)] disabled:opacity-60 transition-colors"
+                                                                    >
+                                                                        <Truck className="w-3.5 h-3.5" /> Dispatch
+                                                                    </button>
+                                                                )}
+                                                                {canMarkDelivered && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleMarkDelivered(delivery.id)}
+                                                                        disabled={isDeliveryActionLoading}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-500 bg-[rgba(16,185,129,0.1)] border border-[rgba(16,185,129,0.2)] hover:bg-[rgba(16,185,129,0.15)] disabled:opacity-60 transition-colors"
+                                                                    >
+                                                                        <CheckCircle className="w-3.5 h-3.5" /> Mark Delivered
+                                                                    </button>
+                                                                )}
+                                                                {canMarkFailed && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => handleMarkFailed(delivery.id)}
+                                                                        disabled={isDeliveryActionLoading}
+                                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--danger)] bg-[rgba(var(--danger-rgb),0.1)] border border-[var(--danger-border)] hover:bg-[rgba(var(--danger-rgb),0.15)] disabled:opacity-60 transition-colors"
+                                                                    >
+                                                                        <XCircle className="w-3.5 h-3.5" /> Mark Failed
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                        {!canManageDeliveries && (
+                            <div className="px-6 py-4 text-xs text-[var(--text3)] bg-[var(--surface2)] border-t border-[var(--border2)]">
+                                Delivery actions require pharmacist permissions.
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="nova-card overflow-hidden animate-in fade-in slide-in-from-bottom-2 relative z-0">

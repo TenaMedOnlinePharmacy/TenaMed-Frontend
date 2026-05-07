@@ -259,6 +259,16 @@ export const orderReject = (id, payload = {}) => api.post('/orders/reject', { or
 export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}/payment-status`, payload, buildAuthHeaders());
 export const pharmacyGetIncomingOrders = () => api.get('/orders/pharmacyOrders', buildAuthHeaders());
 
+// Deliveries (explicit /api path strategy)
+export const deliveryListByStatus = (status) => apiRoot.get(
+    '/api/deliveries',
+    withAuthHeaders({ params: sanitizeParams({ status }) }),
+);
+export const deliveryListFailed = () => apiRoot.get('/api/deliveries/failed', buildAuthHeaders());
+export const deliveryDispatch = (id) => apiRoot.post(`/api/deliveries/${id}/dispatch`, null, buildAuthHeaders());
+export const deliveryMarkDelivered = (id) => apiRoot.post(`/api/deliveries/${id}/deliver`, null, buildAuthHeaders());
+export const deliveryMarkFailed = (id, payload) => apiRoot.post(`/api/deliveries/${id}/fail`, payload, buildAuthHeaders());
+
 // Prescription inventory matching
 export const prescriptionGetInventoryMatches = (prescriptionId) => api.get(`/pharmacy/prescriptions/${prescriptionId}/inventory-matches`, buildAuthHeaders());
 
