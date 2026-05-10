@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
+import { passwordResetRequest } from '../api/axios';
 
 const ForgotPasswordPage = () => {
     const [email, setEmail] = useState('');
     const [status, setStatus] = useState('idle'); // idle, loading, success
+    const [error, setError] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!email.trim()) {
+            setError('Email address is required.');
+            return;
+        }
+        setError('');
         setStatus('loading');
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            await passwordResetRequest({
+                email: email.trim(),
+            });
             setStatus('success');
-        }, 1500);
+        } catch (err) {
+            const message = err?.response?.data?.message || err?.response?.data?.error || err?.message || 'Failed to send reset OTP. Please try again.';
+            setError(message);
+            setStatus('idle');
+        }
     };
 
     return (
@@ -25,7 +38,7 @@ const ForgotPasswordPage = () => {
                         </div>
                         <h2 className="font-syne text-2xl font-bold text-[var(--text)] mb-2">Check your email</h2>
                         <p className="text-[var(--text2)] mb-8 font-light leading-relaxed">
-                            We have sent a password reset link to <br/><span className="font-medium text-[var(--text)]">{email}</span>.
+                            We have sent a password reset OTP to <br/><span className="font-medium text-[var(--text)]">{email}</span>.
                         </p>
                         <Link to="/login" className="btn-ghost w-full">
                             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
@@ -36,7 +49,7 @@ const ForgotPasswordPage = () => {
                         <div className="text-center">
                             <h2 className="font-syne text-3xl md:text-3xl font-bold text-[var(--text)] tracking-tight">Reset Password</h2>
                             <p className="mt-2 text-sm text-[var(--text2)] font-light">
-                                Enter your email address and we'll send you a link to reset your password.
+                                Enter your email address and we'll send you a reset OTP.
                             </p>
                         </div>
                         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
@@ -66,9 +79,15 @@ const ForgotPasswordPage = () => {
                                     disabled={status === 'loading'}
                                     className={`btn-primary w-full py-3.5 text-base rounded-xl ${status === 'loading' ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    {status === 'loading' ? 'Sending...' : 'Send Reset Link'}
+                                    {status === 'loading' ? 'Sending...' : 'Send Reset OTP'}
                                 </button>
                             </div>
+
+                            {error && (
+                                <div className="text-sm text-[var(--danger)] bg-[rgba(var(--danger-rgb),0.1)] border border-[var(--danger-border)] rounded-lg px-4 py-3">
+                                    {error}
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-center pt-2">
                                 <Link to="/login" className="font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] flex items-center gap-2 transition-colors">

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { MapPin, CreditCard, ArrowLeft } from 'lucide-react';
-import { cartCheckout, paymentInitialize, patientCheckMedicineSafety, patientGetProfiles } from '../api/axios';
+import { cartCheckout, paymentInitialize, patientCheckMedicineSafety, patientGetProfiles, deliveryCreate } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { saveOrder } from '../data/orderStore';
 import { shouldUseBuilderFallback } from '../config/devBuilderMode';
@@ -241,6 +241,16 @@ const CheckoutPage = () => {
                     throw new Error('No order id returned from cart checkout');
                 }
 
+                try {
+                    await deliveryCreate({
+                        orderId: firstOrderId,
+                        deliveryAddress: `${shippingData.firstName} ${shippingData.lastName}, ${shippingData.address}, ${shippingData.city}, Phone: ${shippingData.phone}`
+                    });
+                } catch (deliveryError) {
+                    console.error('Failed to create delivery:', deliveryError);
+                    // Still proceed with payment even if delivery creation fails
+                }
+
                 const response = await paymentInitialize(firstOrderId);
 
                 const checkoutUrl = response?.data?.checkout_url;
@@ -288,7 +298,25 @@ const CheckoutPage = () => {
 
         setIsProcessing(true);
         try {
-            await cartCheckout();
+            const checkoutResponse = await cartCheckout();
+            
+            const checkoutData = checkoutResponse?.data || {};
+            const firstOrderId = checkoutData?.orderId
+                || checkoutData?.orderIds?.[0]
+                || checkoutData?.data?.orderId
+                || checkoutData?.data?.orderIds?.[0];
+                
+            if (firstOrderId) {
+                try {
+                    await deliveryCreate({
+                        orderId: firstOrderId,
+                        deliveryAddress: `${shippingData.firstName} ${shippingData.lastName}, ${shippingData.address}, ${shippingData.city}, Phone: ${shippingData.phone}`
+                    });
+                } catch (deliveryError) {
+                    console.error('Failed to create delivery:', deliveryError);
+                }
+            }
+            
             clearCart();
             navigate('/payment-success', { state: { total } });
         } catch (error) {

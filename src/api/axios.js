@@ -89,6 +89,9 @@ export const authLogout = () => api.post('/auth/logout', null, buildAuthHeaders(
 export const authLogoutAll = () => api.post('/auth/logout-all', null, buildAuthHeaders());
 export const authSendOtp = (payload) => api.post('/auth/otp/send', payload, buildAuthHeaders());
 export const authVerifyOtp = (payload) => api.post('/auth/otp/verify', payload, buildAuthHeaders());
+export const passwordResetRequest = (payload) => api.post('/auth/password/forgot', payload, buildAuthHeaders());
+export const passwordResetVerify = (payload) => api.post('/auth/password/verify', payload, buildAuthHeaders());
+export const passwordResetUpdate = (payload) => api.post('/auth/password/reset', payload, buildAuthHeaders());
 
 // Identity
 export const identityRegister = (payload) => api.post('/identity/register', payload, buildAuthHeaders());
@@ -260,6 +263,7 @@ export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}
 export const pharmacyGetIncomingOrders = () => api.get('/orders/pharmacyOrders', buildAuthHeaders());
 
 // Deliveries (explicit /api path strategy)
+export const deliveryCreate = (payload) => apiRoot.post('/api/deliveries', payload, buildAuthHeaders());
 export const deliveryListByStatus = (status) => apiRoot.get(
     '/api/deliveries',
     withAuthHeaders({ params: sanitizeParams({ status }) }),
