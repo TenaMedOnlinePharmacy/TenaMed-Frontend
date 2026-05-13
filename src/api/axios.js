@@ -270,6 +270,7 @@ export const orderAccept = (id) => api.post('/orders/accept', { orderId: id }, b
 export const orderReject = (id, payload = {}) => api.post('/orders/reject', { orderId: id, ...payload }, buildAuthHeaders());
 export const orderUpdatePaymentStatus = (id, payload) => api.post(`/orders/${id}/payment-status`, payload, buildAuthHeaders());
 export const pharmacyGetIncomingOrders = () => api.get('/orders/pharmacyOrders', buildAuthHeaders());
+export const customerGetOrders = () => apiRoot.get('/api/orders/orders', buildAuthHeaders());
 
 // Deliveries (explicit /api path strategy)
 export const deliveryCreate = (payload) => apiRoot.post('/api/deliveries', payload, buildAuthHeaders());

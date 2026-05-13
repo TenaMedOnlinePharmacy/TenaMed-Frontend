@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, User, Search, X } from 'lucide-react';
+import { ShoppingCart, User, Search, X } from 'lucide-react';
 import tenaMedLogo from '../assets/Tena med Logo.svg';
 
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 const MainLayout = () => {
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const location = useLocation();
     const { getCartCount, refreshCart } = useCart();
     const { isAuthenticated, userRole, userEmail, logout } = useAuth();
@@ -83,7 +82,7 @@ const MainLayout = () => {
                         <div className="nova-logo-icon">💊</div>
                         TenaMed
                     </Link>
-                    <div className="nova-nav-links hidden md:flex">
+                    <div className="nova-nav-links">
                         {navItems.map((item) => (
                             <Link 
                                 key={item.to} 
@@ -108,7 +107,7 @@ const MainLayout = () => {
                     </div>
 
                     {isAuthenticated && (
-                       <Link to="/profile" className="nova-icon-btn hidden md:flex" title="Profile">
+                       <Link to="/profile" className="nova-icon-btn" title="Profile">
                            <User className="w-4 h-4" />
                        </Link>
                     )}
@@ -124,7 +123,7 @@ const MainLayout = () => {
                     )}
                     
                     {isAuthenticated ? (
-                       <button onClick={logout} className="nova-icon-btn hidden md:flex" title="Sign Out" style={{ fontSize: '0.8rem' }}>
+                              <button onClick={logout} className="nova-icon-btn" title="Sign Out" style={{ fontSize: '0.8rem' }}>
                            <X className="w-5 h-5" />
                        </button>
                     ) : (
@@ -133,51 +132,7 @@ const MainLayout = () => {
                        </Link>
                     )}
 
-                    <button
-                        type="button"
-                        className="nova-icon-btn md:hidden"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                    </button>
                 </div>
-
-                {mobileMenuOpen && (
-                    <div className="absolute top-[68px] left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 px-4 py-4 space-y-3 z-50 md:hidden shadow-lg" style={{ background: 'var(--nav-bg)' }}>
-                        <nav className="flex flex-col gap-1">
-                            {navItems.map((item) => (
-                                <Link
-                                    key={item.to}
-                                    to={item.to}
-                                    className="nova-nav-link text-center border border-[var(--border)] mt-2"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    {item.label}
-                                </Link>
-                            ))}
-                            {isAuthenticated && (
-                                <Link
-                                    to="/profile"
-                                    className="nova-nav-link text-center border border-[var(--border)] mt-2"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    My Profile
-                                </Link>
-                            )}
-                            {isAuthenticated && (
-                                <button
-                                    onClick={() => {
-                                        logout();
-                                        setMobileMenuOpen(false);
-                                    }}
-                                    className="nova-nav-link text-center border border-[var(--danger)] text-[var(--danger)] mt-2 bg-[rgba(255,79,106,0.1)] hover:bg-[rgba(255,79,106,0.2)]"
-                                >
-                                    Sign Out
-                                </button>
-                            )}
-                        </nav>
-                    </div>
-                )}
             </nav>
 
             {/* Main Content */}

@@ -1,9 +1,70 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { User, Package, MapPin, Phone, Mail, Clock, CheckCircle, Truck, XCircle, Search, Users, Plus, Calendar, Activity, Droplet } from 'lucide-react';
-import { getOrders } from '../data/orderStore';
-import { identityGetMe, patientCreateProfile, patientGetProfiles, patientUpdateProfile, patientDeleteProfile } from '../api/axios';
+import { customerGetOrders, identityGetMe, patientCreateProfile, patientGetProfiles, patientUpdateProfile, patientDeleteProfile } from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { resolveFrontendRoleFromClaims } from '../utils/authRole';
+
+const statusClassMap = {
+    Pending: 'bg-[rgba(234,179,8,0.1)] text-yellow-500 border border-[rgba(234,179,8,0.2)]',
+    Accepted: 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border border-[rgba(16,185,129,0.2)]',
+    Dispatched: 'bg-[rgba(139,92,246,0.1)] text-purple-500 border border-[rgba(139,92,246,0.2)]',
+    Delivered: 'bg-[rgba(34,197,94,0.1)] text-green-500 border border-[rgba(34,197,94,0.2)]',
+    Rejected: 'bg-[rgba(var(--danger-rgb),0.1)] text-[var(--danger)] border border-[var(--danger-border)]',
+};
+
+const statusIcon = {
+    Pending: <Clock className="w-3 h-3" />,
+    Accepted: <CheckCircle className="w-3 h-3" />,
+    Dispatched: <Truck className="w-3 h-3" />,
+    Delivered: <CheckCircle className="w-3 h-3" />,
+    Rejected: <XCircle className="w-3 h-3" />,
+};
+
+const statusLabelMap = {
+    PENDING: 'Pending',
+    ACCEPTED: 'Accepted',
+    DISPATCHED: 'Dispatched',
+    DELIVERED: 'Delivered',
+    REJECTED: 'Rejected',
+};
+
+const normalizeStatus = (value) => {
+    if (!value) {
+        return 'Unknown';
+    }
+    const upper = String(value).trim().toUpperCase();
+    return statusLabelMap[upper] || `${upper.charAt(0)}${upper.slice(1).toLowerCase()}`;
+};
+
+const formatOrderDate = (value) => {
+    if (!value) {
+        return '';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+    }
+    return parsed.toLocaleDateString();
+};
+
+const formatOrderTotal = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+        return '--';
+    }
+    return numeric.toFixed(2);
+};
+
+const mapOrderSummary = (order) => {
+    const status = normalizeStatus(order?.status);
+    return {
+        id: order?.orderId ? String(order.orderId) : '',
+        productNames: Array.isArray(order?.productNames) ? order.productNames : [],
+        total: Number(order?.totalPrice ?? 0),
+        status,
+        date: formatOrderDate(order?.date),
+    };
+};
 
 const UserProfilePage = () => {
     const { userRole, setRole } = useAuth();
@@ -19,7 +80,10 @@ const UserProfilePage = () => {
     const [isLoadingUser, setIsLoadingUser] = useState(false);
     const [userError, setUserError] = useState('');
 
-    const [orders] = useState(getOrders());
+    const [orders, setOrders] = useState([]);
+    const [orderQuery, setOrderQuery] = useState('');
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+    const [orderError, setOrderError] = useState('');
 
     // Patient Profiles State
     const [profiles, setProfiles] = useState([]);
@@ -160,6 +224,55 @@ const UserProfilePage = () => {
             fetchProfiles();
         }
     }, [activeTab, canManagePatients]);
+
+    useEffect(() => {
+        if (activeTab !== 'orders' || !canViewOrders) {
+            return;
+        }
+
+        let isActive = true;
+
+        const loadOrders = async () => {
+            setIsLoadingOrders(true);
+            setOrderError('');
+            try {
+                const response = await customerGetOrders();
+                const data = Array.isArray(response?.data) ? response.data : [];
+                if (isActive) {
+                    setOrders(data.map(mapOrderSummary));
+                }
+            } catch (loadError) {
+                console.error('Failed to load order history:', loadError);
+                if (isActive) {
+                    setOrderError('Unable to load your order history.');
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoadingOrders(false);
+                }
+            }
+        };
+
+        loadOrders();
+
+        return () => {
+            isActive = false;
+        };
+    }, [activeTab, canViewOrders]);
+
+    const filteredOrders = useMemo(() => {
+        const q = orderQuery.trim().toLowerCase();
+        if (!q) {
+            return orders;
+        }
+
+        return orders.filter((order) => {
+            const id = order.id?.toLowerCase() || '';
+            const status = order.status?.toLowerCase() || '';
+            const products = (order.productNames || []).join(' ').toLowerCase();
+            return id.includes(q) || status.includes(q) || products.includes(q);
+        });
+    }, [orders, orderQuery]);
 
     const fetchProfiles = async () => {
         setIsLoadingProfiles(true);
@@ -402,7 +515,13 @@ const UserProfilePage = () => {
                                     <h2 className="font-syne text-2xl font-bold text-[var(--text)] tracking-tight">Order History</h2>
                                     <div className="relative w-full sm:w-auto">
                                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text3)] w-4 h-4" />
-                                        <input type="text" placeholder="Search orders..." className="w-full pl-10 pr-4 py-2 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-lg text-sm outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors placeholder-[var(--text3)]" />
+                                        <input
+                                            type="text"
+                                            value={orderQuery}
+                                            onChange={(e) => setOrderQuery(e.target.value)}
+                                            placeholder="Search orders..."
+                                            className="w-full pl-10 pr-4 py-2 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-lg text-sm outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors placeholder-[var(--text3)]"
+                                        />
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -418,33 +537,39 @@ const UserProfilePage = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-[var(--border2)]">
-                                            {orders.map(order => (
-                                                <tr key={order.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors">
-                                                    <td className="p-4 font-mono font-medium text-[var(--accent)] text-sm">{order.id}</td>
-                                                    <td className="p-4 text-[var(--text2)] text-sm">{order.date}</td>
-                                                    <td className="p-4 text-[var(--text2)] text-sm">
-                                                        {order.items.length} items
-                                                    </td>
-                                                    <td className="p-4 font-medium text-[var(--text)]">${order.total.toFixed(2)}</td>
-                                                    <td className="p-4">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 w-max border ${
-                                                                order.status === 'Pending' ? 'bg-[rgba(234,179,8,0.1)] text-yellow-500 border-[rgba(234,179,8,0.2)]' :
-                                                                order.status === 'Accepted' ? 'bg-[rgba(16,185,129,0.1)] text-emerald-500 border-[rgba(16,185,129,0.2)]' :
-                                                                order.status === 'Dispatched' ? 'bg-[rgba(139,92,246,0.1)] text-purple-500 border-[rgba(139,92,246,0.2)]' :
-                                                                'bg-[rgba(34,197,94,0.1)] text-green-500 border-[rgba(34,197,94,0.2)]'
-                                                            }`}>
-                                                            {order.status === 'Pending' && <Clock className="w-3 h-3" />}
-                                                            {order.status === 'Accepted' && <CheckCircle className="w-3 h-3" />}
-                                                            {order.status === 'Dispatched' && <Truck className="w-3 h-3" />}
-                                                            {order.status === 'Delivered' && <CheckCircle className="w-3 h-3" />}
-                                                            {order.status}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-4">
-                                                        <button className="text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm font-semibold transition-colors">View Details</button>
-                                                    </td>
+                                            {isLoadingOrders ? (
+                                                <tr>
+                                                    <td className="p-6 text-sm text-[var(--text3)]" colSpan={6}>Loading orders...</td>
                                                 </tr>
-                                            ))}
+                                            ) : orderError ? (
+                                                <tr>
+                                                    <td className="p-6 text-sm text-red-500" colSpan={6}>{orderError}</td>
+                                                </tr>
+                                            ) : filteredOrders.length === 0 ? (
+                                                <tr>
+                                                    <td className="p-6 text-sm text-[var(--text3)]" colSpan={6}>No orders found.</td>
+                                                </tr>
+                                            ) : (
+                                                filteredOrders.map((order, index) => (
+                                                    <tr key={order.id || `order-${index}`} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors">
+                                                        <td className="p-4 font-mono font-medium text-[var(--accent)] text-sm">{order.id}</td>
+                                                        <td className="p-4 text-[var(--text2)] text-sm">{order.date}</td>
+                                                        <td className="p-4 text-[var(--text2)] text-sm">
+                                                            {order.productNames.length} items
+                                                        </td>
+                                                        <td className="p-4 font-medium text-[var(--text)]">${formatOrderTotal(order.total)}</td>
+                                                        <td className="p-4">
+                                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 w-max border ${statusClassMap[order.status] || 'bg-[var(--surface2)] text-[var(--text)] border-[var(--border2)]'}`}>
+                                                                {statusIcon[order.status]}
+                                                                {order.status}
+                                                            </span>
+                                                        </td>
+                                                        <td className="p-4">
+                                                            <button className="text-[var(--accent)] hover:text-[var(--accent-hover)] text-sm font-semibold transition-colors">View Details</button>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>

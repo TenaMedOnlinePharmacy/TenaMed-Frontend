@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Clock, Search, CheckCircle, Truck } from 'lucide-react';
-import { getOrders } from '../data/orderStore';
+import { customerGetOrders } from '../api/axios';
 
 const statusClassMap = {
     Pending: 'bg-[rgba(234,179,8,0.1)] text-yellow-500 border border-[rgba(234,179,8,0.2)]',
@@ -18,18 +18,102 @@ const statusIcon = {
     Rejected: <Clock className="w-3.5 h-3.5" />,
 };
 
+const statusLabelMap = {
+    PENDING: 'Pending',
+    ACCEPTED: 'Accepted',
+    DISPATCHED: 'Dispatched',
+    DELIVERED: 'Delivered',
+    REJECTED: 'Rejected',
+};
+
+const normalizeStatus = (value) => {
+    if (!value) {
+        return 'Unknown';
+    }
+    const upper = String(value).trim().toUpperCase();
+    return statusLabelMap[upper] || `${upper.charAt(0)}${upper.slice(1).toLowerCase()}`;
+};
+
+const formatOrderDate = (value) => {
+    if (!value) {
+        return '';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return String(value);
+    }
+    return parsed.toLocaleDateString();
+};
+
+const formatOrderTotal = (value) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+        return '--';
+    }
+    return numeric.toFixed(2);
+};
+
+const mapOrderSummary = (order) => {
+    const status = normalizeStatus(order?.status);
+    return {
+        id: order?.orderId ? String(order.orderId) : '',
+        productNames: Array.isArray(order?.productNames) ? order.productNames : [],
+        total: Number(order?.totalPrice ?? 0),
+        status,
+        date: formatOrderDate(order?.date),
+    };
+};
+
 const OrderTrackingPage = () => {
     const [query, setQuery] = useState('');
-    const orders = useMemo(() => getOrders(), []);
+    const [orders, setOrders] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
 
-    const filtered = orders.filter((order) => {
-        const q = query.toLowerCase();
-        return (
-            order.id.toLowerCase().includes(q) ||
-            order.customer.toLowerCase().includes(q) ||
-            order.status.toLowerCase().includes(q)
-        );
-    });
+    useEffect(() => {
+        let isActive = true;
+
+        const loadOrders = async () => {
+            setIsLoading(true);
+            setError('');
+            try {
+                const response = await customerGetOrders();
+                const data = Array.isArray(response?.data) ? response.data : [];
+                if (isActive) {
+                    setOrders(data.map(mapOrderSummary));
+                }
+            } catch (loadError) {
+                console.error('Failed to load orders:', loadError);
+                if (isActive) {
+                    setError('Unable to load your orders right now.');
+                }
+            } finally {
+                if (isActive) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        loadOrders();
+
+        return () => {
+            isActive = false;
+        };
+    }, []);
+
+    const filtered = useMemo(() => {
+        const q = query.trim().toLowerCase();
+        if (!q) {
+            return orders;
+        }
+
+        return orders.filter((order) => {
+            const id = order.id?.toLowerCase() || '';
+            const status = order.status?.toLowerCase() || '';
+            const products = (order.productNames || []).join(' ').toLowerCase();
+            return id.includes(q) || status.includes(q) || products.includes(q);
+        });
+    }, [orders, query]);
 
     return (
         <div className="bg-transparent min-h-[calc(100vh-4.25rem)] py-12 relative z-10 transition-colors">
@@ -47,7 +131,7 @@ const OrderTrackingPage = () => {
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="Search by order ID, status..."
+                                placeholder="Search by order ID, status, product..."
                                 className="w-full pl-9 pr-3 py-2 bg-[var(--bg)] border border-[var(--border2)] rounded-lg text-sm text-[var(--text)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-colors placeholder-[var(--text3)]"
                             />
                         </div>
@@ -65,20 +149,34 @@ const OrderTrackingPage = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border2)]">
-                                {filtered.map((order) => (
-                                    <tr key={order.id} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors">
-                                        <td className="p-4 font-mono font-semibold text-[var(--accent)]">{order.id}</td>
-                                        <td className="p-4 text-[var(--text2)]">{order.date}</td>
-                                        <td className="p-4 text-[var(--text2)]">{order.items.length} items</td>
-                                        <td className="p-4 font-medium text-[var(--text)]">${order.total.toFixed(2)}</td>
-                                        <td className="p-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClassMap[order.status] || 'bg-[var(--surface2)] text-[var(--text)] border border-[var(--border2)]'}`}>
-                                                {statusIcon[order.status]}
-                                                {order.status}
-                                            </span>
-                                        </td>
+                                {isLoading ? (
+                                    <tr>
+                                        <td className="p-6 text-sm text-[var(--text3)]" colSpan={5}>Loading orders...</td>
                                     </tr>
-                                ))}
+                                ) : error ? (
+                                    <tr>
+                                        <td className="p-6 text-sm text-red-500" colSpan={5}>{error}</td>
+                                    </tr>
+                                ) : filtered.length === 0 ? (
+                                    <tr>
+                                        <td className="p-6 text-sm text-[var(--text3)]" colSpan={5}>No orders found.</td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((order, index) => (
+                                        <tr key={order.id || `order-${index}`} className="hover:bg-[rgba(var(--accent-rgb),0.02)] transition-colors">
+                                            <td className="p-4 font-mono font-semibold text-[var(--accent)]">{order.id}</td>
+                                            <td className="p-4 text-[var(--text2)]">{order.date}</td>
+                                            <td className="p-4 text-[var(--text2)]">{order.productNames.length} items</td>
+                                            <td className="p-4 font-medium text-[var(--text)]">${formatOrderTotal(order.total)}</td>
+                                            <td className="p-4">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusClassMap[order.status] || 'bg-[var(--surface2)] text-[var(--text)] border border-[var(--border2)]'}`}>
+                                                    {statusIcon[order.status]}
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>
