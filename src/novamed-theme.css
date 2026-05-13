@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@300;400;500&display=swap');
 
 /* ══════════════════════════════════════════════
    THEME VARIABLES
@@ -88,7 +88,7 @@
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -137,7 +137,7 @@ body::after {
 
 .nova-logo {
   display: flex; align-items: center; gap: 10px;
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.45rem; font-weight: 800; letter-spacing: -0.5px;
   color: var(--text); text-decoration: none;
   transition: color var(--transition-theme);
@@ -176,7 +176,7 @@ body::after {
 }
 
 .toggle-label {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.68rem; letter-spacing: 1px;
   color: var(--text3);
   transition: color var(--transition-theme);
@@ -296,7 +296,7 @@ body::after {
 
 .nova-hero-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
   color: var(--accent2);
   padding: 4px 12px 4px 8px;
@@ -315,7 +315,7 @@ body::after {
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 .nova-hero-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: clamp(2rem, 3.5vw, 3rem);
   font-weight: 800; letter-spacing: -1.5px; line-height: 1.08;
   color: var(--text);
@@ -346,7 +346,7 @@ body::after {
   border: none; cursor: pointer;
   box-shadow: 0 0 28px rgba(var(--accent-rgb),0.35);
   transition: all 0.2s;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
 }
@@ -358,7 +358,7 @@ body::after {
   color: var(--text2); font-size: 0.88rem; font-weight: 500;
   border: 1px solid var(--border2); cursor: pointer;
   transition: all 0.2s;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   text-decoration: none;
   display: inline-flex; align-items: center; justify-content: center;
 }
@@ -402,7 +402,7 @@ body::after {
   border: 1px solid var(--border2);
   border-radius: 16px;
   padding: 15px 22px 15px 52px;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   color: var(--text);
   outline: none;
@@ -425,7 +425,7 @@ body::after {
 .nova-search-kbd {
   position: absolute; right: 14px; top: 50%;
   transform: translateY(-50%);
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.6rem; color: var(--text3);
   padding: 2px 6px; border-radius: 4px;
   border: 1px solid var(--border);
@@ -468,7 +468,7 @@ body::after {
 .nova-stat-content { display: flex; flex-direction: column; gap: 1px; }
 
 .nova-stat-val {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 1.25rem; font-weight: 500;
   color: var(--accent2);
   transition: color var(--transition-theme);
@@ -494,7 +494,7 @@ body::after {
 .nova-filter-bar::-webkit-scrollbar { display: none; }
 
 .nova-filter-label {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.65rem; letter-spacing: 2px;
   color: var(--text3); white-space: nowrap;
   margin-right: 6px; text-transform: uppercase;
@@ -509,7 +509,7 @@ body::after {
   font-size: 0.8rem; font-weight: 500;
   cursor: pointer; white-space: nowrap;
   transition: all 0.2s;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 .nova-pill:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
 .nova-pill.active {
@@ -528,7 +528,7 @@ body::after {
   border: 1px solid var(--border2);
   border-radius: 10px;
   color: var(--text2);
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.74rem;
   padding: 7px 14px;
   outline: none; cursor: pointer;
@@ -590,7 +590,7 @@ body::after {
 @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 
 .nova-featured-pill {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.62rem; letter-spacing: 2px;
   padding: 3px 10px; border-radius: 20px;
   background: linear-gradient(90deg, var(--accent), var(--accent2));
@@ -601,7 +601,7 @@ body::after {
 }
 
 .nova-featured-name {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.3rem; font-weight: 800;
   color: var(--text); letter-spacing: -0.5px;
   transition: color var(--transition-theme);
@@ -623,7 +623,7 @@ body::after {
 .nova-featured-right { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 0.8rem; }
 
 .nova-featured-price {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 1.7rem; font-weight: 500;
   color: var(--accent2);
   transition: color var(--transition-theme);
@@ -636,7 +636,7 @@ body::after {
   border: none; cursor: pointer;
   box-shadow: 0 0 20px rgba(var(--accent-rgb),0.3);
   transition: all 0.2s;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
 }
 .nova-featured-add:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(var(--accent-rgb),0.5); }
 
@@ -648,14 +648,14 @@ body::after {
 }
 
 .nova-section-title {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.1rem; font-weight: 700;
   color: var(--text); letter-spacing: -0.3px;
   transition: color var(--transition-theme);
 }
 
 .nova-count-badge {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.72rem; color: var(--text3);
   padding: 4px 12px; border-radius: 20px;
   background: var(--surface); border: 1px solid var(--border);
@@ -676,8 +676,8 @@ body::after {
   background: var(--card-bg);
   border: 1px solid rgba(var(--accent-rgb), 0.15);
   border-radius: 24px;
-  padding: 1.5rem;
-  display: flex; flex-direction: column; gap: 1rem;
+  padding: 0;
+  display: flex; flex-direction: column;
   cursor: pointer;
   position: relative;
   overflow: hidden;
@@ -724,42 +724,55 @@ body::after {
 }
 .nova-card:hover::after { opacity: 1; }
 
-.nova-card-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
-}
-
-.nova-card-icon-wrap {
-  width: 56px; height: 56px; border-radius: 16px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.4rem;
-  transition: all 0.4s ease;
+.nova-card-image-wrap {
+  width: 100%; height: 180px;
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 2px 10px rgba(255,255,255,0.05);
-}
-.nova-card:hover .nova-card-icon-wrap {
-  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.2), rgba(var(--accent2-rgb), 0.2));
-  border-color: rgba(var(--accent2-rgb), 0.5);
-  box-shadow: 0 8px 24px rgba(var(--accent-rgb), 0.3);
+  border-bottom: 1px solid rgba(var(--border-rgb), 0.3);
 }
 
-.nova-card-icon-img {
-  width: 38px; height: 38px;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 10px rgba(var(--accent-rgb), 0.2));
+.nova-card-image-link {
+  display: block;
+  width: 100%; height: 100%;
+}
+
+.nova-card-image {
+  width: 100%; height: 100%;
+  object-fit: cover;
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.nova-card:hover .nova-card-icon-img {
-  transform: scale(1.15) rotate(5deg);
+.nova-card:hover .nova-card-image {
+  transform: scale(1.05);
+}
+
+.nova-badges-overlay {
+  position: absolute; bottom: 12px; left: 12px;
+  display: flex; gap: 8px; align-items: center;
+  z-index: 10;
+}
+
+.nova-card-body {
+  padding: 1rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+
+.nova-card-meta {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.72rem; color: var(--text3); margin-top: 4px;
+  letter-spacing: 0.2px;
+}
+
+.nova-card-meta-sub {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.68rem; color: var(--text3); margin-top: 2px;
+  letter-spacing: 0.2px;
 }
 
 .nova-badges { display: flex; gap: 4px; flex-direction: column; align-items: flex-end; }
 
 .nova-badge {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.62rem; letter-spacing: 0.5px; font-weight: 600;
   padding: 4px 10px; border-radius: 8px;
   text-transform: uppercase;
@@ -769,7 +782,7 @@ body::after {
 .nova-badge-low { background: rgba(255,79,106,0.15); color: #ff4f6a; border: 1px solid rgba(255,79,106,0.3); }
 
 .nova-card-name {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.05rem; font-weight: 800; color: var(--text);
   line-height: 1.3; letter-spacing: -0.2px;
   transition: color var(--transition-theme);
@@ -787,7 +800,7 @@ body::after {
 }
 
 .nova-card-generic {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.68rem; color: var(--text3); margin-top: 3px;
   letter-spacing: 0.3px;
   transition: color var(--transition-theme);
@@ -812,8 +825,8 @@ body::after {
   display: flex; justify-content: space-between; align-items: center;
   margin-bottom: 6px;
 }
-.nova-stock-text { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--text3); }
-.nova-stock-val { font-family: 'DM Mono', monospace; font-size: 0.68rem; font-weight: 600; }
+.nova-stock-text { font-family: 'Roboto Mono', monospace; font-size: 0.68rem; color: var(--text3); }
+.nova-stock-val { font-family: 'Roboto Mono', monospace; font-size: 0.68rem; font-weight: 600; }
 
 .nova-stock-bar {
   height: 6px; background: var(--surface2);
@@ -854,7 +867,7 @@ body::after {
   line-height: 1;
 }
 .nova-pharmacy-name {
-  font-family: 'DM Mono', monospace;
+  font-family: 'Roboto Mono', monospace;
   font-size: 0.68rem;
   color: var(--text2);
   white-space: nowrap;
@@ -896,7 +909,7 @@ body::after {
   border: 1px solid rgba(var(--accent-rgb), 0.3);
   background: rgba(var(--accent-rgb), 0.05);
   color: var(--accent);
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.3px;
@@ -928,7 +941,7 @@ body::after {
 
 
 .nova-price {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Inter', sans-serif;
   font-size: 1.3rem; font-weight: 800;
   background: linear-gradient(135deg, var(--text) 0%, var(--text2) 100%);
   background-clip: text;
@@ -946,7 +959,7 @@ body::after {
 }
 
 .nova-price-unit {
-  font-size: 0.68rem; color: var(--text3); font-family: 'DM Mono', monospace;
+  font-size: 0.68rem; color: var(--text3); font-family: 'Roboto Mono', monospace;
   display: block; margin-top: 1px;
 }
 
@@ -985,7 +998,7 @@ body::after {
   color: var(--text3);
 }
 .nova-empty-icon { font-size: 3rem; opacity: 0.4; }
-.nova-empty-msg { font-size: 1rem; font-weight: 500; font-family: 'Syne', sans-serif; }
+.nova-empty-msg { font-size: 1rem; font-weight: 500; font-family: 'Inter', sans-serif; }
 
 /* ══════════════════════════════════════════════
    SCROLL ANIMATIONS

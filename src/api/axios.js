@@ -157,6 +157,15 @@ export const medicineRemoveAllergen = (medicineId, allergenId) => api.delete(`/m
 export const medicineAddDopingRule = (medicineId, payload) => api.post(`/medicines/${medicineId}/doping-rules`, payload, buildAuthHeaders());
 export const medicineRemoveDopingRule = (medicineId, ruleId) => api.delete(`/medicines/${medicineId}/doping-rules/${ruleId}`, buildAuthHeaders());
 
+// Complaints
+export const complaintCreate = (payload) => apiRoot.post('/api/complaints', payload, buildAuthHeaders());
+export const complaintGetMy = () => apiRoot.get('/api/complaints/my', buildAuthHeaders());
+export const complaintGetDetails = (id) => apiRoot.get(`/api/complaints/${id}`, buildAuthHeaders());
+export const adminComplaintGetAll = () => apiRoot.get('/api/admin/complaints', buildAuthHeaders());
+export const adminComplaintGetDetails = (id) => apiRoot.get(`/api/admin/complaints/${id}`, buildAuthHeaders());
+export const adminComplaintUpdateStatus = (id, payload) => apiRoot.patch(`/api/admin/complaints/${id}/status`, payload, buildAuthHeaders());
+export const adminComplaintAddNote = (id, payload) => apiRoot.patch(`/api/admin/complaints/${id}/admin-note`, payload, buildAuthHeaders());
+
 // Inventory
 export const inventoryCreate = (payload) => api.post('/inventory', payload, buildAuthHeaders());
 export const inventoryAddBatch = (payload, file) => {

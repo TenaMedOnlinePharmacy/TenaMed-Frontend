@@ -478,52 +478,62 @@ const ProductsPage = () => {
 
                     return (
                         <div key={product.listKey || product.id} className="nova-card" style={{ animationDelay: `${i * 0.05}s` }}>
-                            <div className="nova-card-top">
+                            {/* TOP IMAGE AREA */}
+                            <div className="nova-card-image-wrap">
                                 <Link
                                     to={`/products/${product.routeId || product.id}`}
                                     state={linkState}
-                                    className="nova-card-icon-wrap"
+                                    className="nova-card-image-link"
                                 >
-                                    <img src={product.image} className="nova-card-icon-img" alt={product.name} onError={(e) => { e.currentTarget.src = FALLBACK_MEDICINE_IMAGE; }} />
+                                    <img src={product.image} className="nova-card-image" alt={product.name} onError={(e) => { e.currentTarget.src = FALLBACK_MEDICINE_IMAGE; }} />
                                 </Link>
-                                <div className="nova-badges">
+                                <div className="nova-badges-overlay">
                                     {product.prescriptionRequired ? (
-                                        <span className="nova-badge nova-badge-rx">Rx Only</span>
+                                        <span className="nova-badge nova-badge-rx" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div className="nova-badge-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }}></div>
+                                            Rx Only
+                                        </span>
                                     ) : (
-                                        <span className="nova-badge nova-badge-otc">OTC</span>
+                                        <span className="nova-badge nova-badge-otc" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <div className="nova-badge-dot" style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'currentColor' }}></div>
+                                            OTC
+                                        </span>
                                     )}
                                     {!product.inStock && <span className="nova-badge nova-badge-low">OOS</span>}
                                 </div>
                             </div>
 
-                            <Link
-                                to={`/products/${product.routeId || product.id}`}
-                                state={linkState}
-                                className="no-underline group"
-                            >
-                                <div className="nova-card-name group-hover:text-[var(--accent)] transition-colors">{product.name}</div>
-                                {product.genericName && <div className="nova-card-generic">{product.genericName}</div>}
-                                <span className="nova-card-cat">{product.category}</span>
-                            </Link>
+                            {/* MIDDLE CONTENT AREA */}
+                            <div className="nova-card-body">
+                                <div className="nova-card-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <Link
+                                        to={`/products/${product.routeId || product.id}`}
+                                        state={linkState}
+                                        className="no-underline group"
+                                        style={{ flex: 1 }}
+                                    >
+                                        <div className="nova-card-name group-hover:text-[var(--accent)] transition-colors">{product.name}</div>
+                                        <div className="nova-card-meta">
+                                            {product.genericName ? `${product.genericName} • ` : ''}{product.category}
+                                        </div>
+                                        <div className="nova-card-meta-sub">
+                                            {product.inStock ? `${rawQty ?? 'In'} Stock` : 'Out of Stock'}
+                                        </div>
+                                    </Link>
+                                    <div className="nova-card-menu">
+                                        {/* Optional 3-dot menu or extra info aligned top right like in image */}
+                                        <span style={{ color: 'var(--text3)', fontSize: '1.2rem', padding: '0 4px' }}>•••</span>
+                                    </div>
+                                </div>
 
-                            <div className="nova-pharmacy-row">
-                                <span className="nova-pharmacy-icon">🏪</span>
-                                <span className="nova-pharmacy-name">{product.pharmacy}</span>
-                            </div>
-
-                            <div className="nova-card-bottom" style={{ flexDirection: 'column', gap: '0.75rem', alignItems: 'stretch' }}>
-                                {/* Athlete Anti-Doping Check — Full Width Row */}
+                                {/* Athlete Anti-Doping Check */}
                                 {isAthlete && (
                                     <button
                                         className="nova-doping-check-btn"
+                                        style={{ marginTop: '0.75rem', ...(dopingCheckSafe[product.id] ? { borderColor: 'var(--success)', color: 'var(--success)', background: 'rgba(0,229,192,0.08)' } : {}) }}
                                         title="Anti-Doping Check"
                                         onClick={(e) => handleDopingCheck(e, product)}
                                         disabled={dopingCheckLoading === product.id}
-                                        style={
-                                            dopingCheckSafe[product.id]
-                                                ? { borderColor: 'var(--success)', color: 'var(--success)', background: 'rgba(0,229,192,0.08)' }
-                                                : {}
-                                        }
                                     >
                                         {dopingCheckLoading === product.id ? (
                                             <span className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full block flex-shrink-0"></span>
@@ -539,35 +549,52 @@ const ProductsPage = () => {
                                         </span>
                                     </button>
                                 )}
+                            </div>
 
-                                {/* Price + Action Row */}
-                                <div className="nova-card-action-row">
-                                    <div className="nova-price-wrap">
-                                        {typeof product.price === 'number' ? (
-                                            <div className="nova-price">${product.price.toFixed(2)}</div>
-                                        ) : (
-                                            <div className="nova-price" style={{ opacity: 0.4, fontSize: '0.85rem' }}>Unavailable</div>
-                                        )}
-                                        <span className="nova-price-unit">per pack</span>
+                            <div className="nova-card-divider" style={{ height: '1px', background: 'var(--border)', margin: '0 1rem', opacity: 0.5 }}></div>
+
+                            {/* FOOTER */}
+                            <div className="nova-card-footer" style={{ padding: '0.75rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                {/* Left Side: Price */}
+                                <div className="nova-price-section" style={{ display: 'flex', flexDirection: 'column', gap: '2px', paddingBottom: '2px' }}>
+                                    <span style={{ fontSize: '0.65rem', color: 'var(--text3)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Price</span>
+                                    {typeof product.price === 'number' ? (
+                                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '2px' }}>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: '800', color: 'var(--text)', lineHeight: '1' }}>${product.price.toFixed(2)}</span>
+                                        </div>
+                                    ) : (
+                                        <span style={{ fontSize: '0.85rem', color: 'var(--text3)', fontWeight: '500' }}>N/A</span>
+                                    )}
+                                </div>
+                                
+                                {/* Right Side: Pharmacy Name & Action Button */}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+                                    <div className="nova-pharmacy-info" style={{ display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '140px' }}>
+                                        <span style={{ fontSize: '0.7rem' }}>🏪</span>
+                                        <span className="nova-pharmacy-name" style={{ fontSize: '0.7rem', fontWeight: '600', color: 'var(--text2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={product.pharmacy}>
+                                            {product.pharmacy}
+                                        </span>
                                     </div>
+                                    
                                     {product.prescriptionRequired ? (
                                         <Link
                                             to="/upload-prescription"
                                             state={{ medicine: product, source: 'products-list' }}
                                             className="nova-icon-btn"
                                             title="Upload Prescription"
+                                            style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                             📄
                                         </Link>
                                     ) : (
                                         <button
                                             className={`nova-add-btn ${isAdded ? 'added' : ''}`}
+                                            style={{ width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', ...( !product.inStock ? { opacity: 0.4, cursor: 'not-allowed' } : {} ) }}
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 addToCart(product, 1);
                                             }}
                                             disabled={!product.inStock}
-                                            style={!product.inStock ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
                                         >
                                             +
                                         </button>

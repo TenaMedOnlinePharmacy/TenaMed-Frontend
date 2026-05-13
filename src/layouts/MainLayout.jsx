@@ -47,6 +47,7 @@ const MainLayout = () => {
             { to: '/products', label: 'Medicines' },
             { to: '/upload-prescription', label: 'Prescription' },
             { to: '/orders', label: 'My Orders' },
+            { to: '/complaints', label: 'Complaints' },
         ],
         pharmacy: [
             { to: '/pharmacist/dashboard', label: 'Dashboard' },
@@ -66,6 +67,7 @@ const MainLayout = () => {
         admin: [
             { to: '/admin/dashboard', label: 'Admin Dashboard' },
             { to: '/admin/medical-verification', label: 'Medical Verification' },
+            { to: '/admin/complaints', label: 'Complaints' },
         ],
     };
 

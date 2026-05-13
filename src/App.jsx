@@ -34,6 +34,11 @@ import LoadingPage from './pages/LoadingPage';
 import AntiDopingResultPage from './pages/AntiDopingResultPage';
 
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ComplaintList from './pages/ComplaintList';
+import CreateComplaint from './pages/CreateComplaint';
+import ComplaintDetails from './pages/ComplaintDetails';
+import AdminComplaintList from './pages/AdminComplaintList';
+import AdminComplaintDetails from './pages/AdminComplaintDetails';
 
 // Create placeholders for other pages to avoid errors until they are built
 const PlaceholderInfo = ({ title }) => (
@@ -106,6 +111,18 @@ function App() {
             path="upload-prescription"
             element={<ProtectedRoute roles={['customer']}><UploadPrescriptionPage /></ProtectedRoute>}
           />
+          <Route
+            path="complaints"
+            element={<ProtectedRoute roles={['customer']}><ComplaintList /></ProtectedRoute>}
+          />
+          <Route
+            path="complaints/create"
+            element={<ProtectedRoute roles={['customer']}><CreateComplaint /></ProtectedRoute>}
+          />
+          <Route
+            path="complaints/:id"
+            element={<ProtectedRoute roles={['customer']}><ComplaintDetails /></ProtectedRoute>}
+          />
 
           <Route
             path="pharmacist/dashboard"
@@ -153,6 +170,14 @@ function App() {
           <Route
             path="admin/medical-verification"
             element={<ProtectedRoute roles={['admin']}><MedicalVerificationDashboardPage /></ProtectedRoute>}
+          />
+          <Route
+            path="admin/complaints"
+            element={<ProtectedRoute roles={['admin']}><AdminComplaintList /></ProtectedRoute>}
+          />
+          <Route
+            path="admin/complaints/:id"
+            element={<ProtectedRoute roles={['admin']}><AdminComplaintDetails /></ProtectedRoute>}
           />
 
           <Route path="login" element={<LoginPage />} />
