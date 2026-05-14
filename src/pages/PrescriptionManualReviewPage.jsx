@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle, ChevronLeft } from 'lucide-react';
 import { ocrGetPipelineStatus } from '../api/axios';
+import { resolveApiImageUrl } from '../utils/imageUrl';
 
 const PrescriptionManualReviewPage = () => {
     const { prescriptionId } = useParams();
     const navigate = useNavigate();
-    const [products, setProducts] = useState(null);
+    const [matches, setMatches] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState('');
     const [pipelineStatus, setPipelineStatus] = useState(null);
@@ -23,18 +24,17 @@ const PrescriptionManualReviewPage = () => {
             setErrorMsg('');
             try {
                 const response = await ocrGetPipelineStatus(prescriptionId);
-                const data = response?.data;
+                const data = response?.data || null;
 
                 // Store pipeline status for reference
                 setPipelineStatus(data);
 
-                // Extract products from response - adjust based on actual API response structure
-                const fetchedProducts = data?.products || data?.data?.products || [];
-                setProducts(fetchedProducts);
-
-                if (!fetchedProducts || fetchedProducts.length === 0) {
-                    setErrorMsg('No products found for this prescription.');
-                }
+                const fetchedMatches =
+                    data?.inventoryMatches ||
+                    data?.inventory_matches ||
+                    data?.matches ||
+                    [];
+                setMatches(Array.isArray(fetchedMatches) ? fetchedMatches : []);
             } catch (error) {
                 console.error('Error fetching prescription data:', error);
                 setErrorMsg(
@@ -42,7 +42,7 @@ const PrescriptionManualReviewPage = () => {
                     error?.response?.data?.message ||
                     'Failed to load prescription details. Please try again.'
                 );
-                setProducts([]);
+                setMatches([]);
             } finally {
                 setIsLoading(false);
             }
@@ -50,6 +50,10 @@ const PrescriptionManualReviewPage = () => {
 
         fetchPrescriptionData();
     }, [prescriptionId]);
+
+    const statusLabel = useMemo(() => pipelineStatus?.status || '', [pipelineStatus]);
+    const statusMessage = useMemo(() => pipelineStatus?.message || '', [pipelineStatus]);
+    const prescriptionStatus = useMemo(() => pipelineStatus?.prescriptionStatus || '', [pipelineStatus]);
 
     if (isLoading) {
         return (
@@ -87,6 +91,12 @@ const PrescriptionManualReviewPage = () => {
                     </div>
                 )}
 
+                {statusMessage && !errorMsg && (
+                    <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p className="text-blue-800 text-sm font-medium">{statusMessage}</p>
+                    </div>
+                )}
+
                 {/* Prescription Info */}
                 <div className="bg-white rounded-lg shadow p-6 mb-6">
                     <h1 className="text-2xl font-bold text-gray-900 mb-4">Prescription Details</h1>
@@ -95,10 +105,16 @@ const PrescriptionManualReviewPage = () => {
                             <p className="text-sm text-gray-600">Prescription ID</p>
                             <p className="text-lg font-mono text-gray-900 break-all">{prescriptionId}</p>
                         </div>
-                        {pipelineStatus?.status && (
+                        {statusLabel && (
                             <div>
                                 <p className="text-sm text-gray-600">Status</p>
-                                <p className="text-lg font-semibold text-green-600">{pipelineStatus.status}</p>
+                                <p className="text-lg font-semibold text-green-600">{statusLabel}</p>
+                            </div>
+                        )}
+                        {prescriptionStatus && (
+                            <div>
+                                <p className="text-sm text-gray-600">Prescription Status</p>
+                                <p className="text-lg font-semibold text-gray-900">{prescriptionStatus}</p>
                             </div>
                         )}
                     </div>
@@ -108,19 +124,19 @@ const PrescriptionManualReviewPage = () => {
                 <div className="bg-white rounded-lg shadow p-6">
                     <h2 className="text-xl font-bold text-gray-900 mb-4">Associated Products</h2>
 
-                    {products && products.length > 0 ? (
+                    {matches.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {products.map((product, index) => (
+                            {matches.map((match, index) => (
                                 <div
-                                    key={product?.id || index}
+                                    key={match?.productId || index}
                                     className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition"
                                 >
                                     {/* Product Image */}
-                                    {product?.image && (
+                                    {match?.imageUrl && (
                                         <div className="h-48 bg-gray-100 overflow-hidden">
                                             <img
-                                                src={product.image}
-                                                alt={product?.name || 'Product'}
+                                                src={resolveApiImageUrl(match.imageUrl, match.imageUrl)}
+                                                alt={match?.medicineName || match?.brandName || 'Product'}
                                                 className="w-full h-full object-cover"
                                             />
                                         </div>
@@ -129,52 +145,53 @@ const PrescriptionManualReviewPage = () => {
                                     {/* Product Info */}
                                     <div className="p-4">
                                         <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">
-                                            {product?.name || 'Unknown Product'}
+                                            {match?.medicineName || match?.brandName || 'Unknown Product'}
                                         </h3>
 
-                                        {product?.description && (
+                                        {match?.medicineCategory && (
                                             <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                                                {product.description}
+                                                {match.medicineCategory}
                                             </p>
                                         )}
 
                                         <div className="space-y-2 mb-4">
-                                            {product?.strength && (
+                                            {match?.pharmacyLegalName && (
                                                 <p className="text-sm text-gray-700">
-                                                    <span className="font-semibold">Strength:</span> {product.strength}
+                                                    <span className="font-semibold">Pharmacy:</span> {match.pharmacyLegalName}
                                                 </p>
                                             )}
-                                            {product?.form && (
+                                            {match?.price !== null && match?.price !== undefined && (
                                                 <p className="text-sm text-gray-700">
-                                                    <span className="font-semibold">Form:</span> {product.form}
+                                                    <span className="font-semibold">Price:</span> ${match.price}
                                                 </p>
                                             )}
-                                            {product?.quantity && (
+                                            {match?.prescriptionRequired !== undefined && (
                                                 <p className="text-sm text-gray-700">
-                                                    <span className="font-semibold">Quantity:</span> {product.quantity}
-                                                </p>
-                                            )}
-                                            {product?.price && (
-                                                <p className="text-sm text-gray-700">
-                                                    <span className="font-semibold">Price:</span> ${product.price}
+                                                    <span className="font-semibold">Prescription:</span> {match.prescriptionRequired ? 'Required' : 'Not required'}
                                                 </p>
                                             )}
                                         </div>
 
                                         {/* Add to Cart Button */}
-                                        <button
-                                            onClick={() => navigate(`/products/${product?.id}`)}
-                                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
-                                        >
-                                            View Details
-                                        </button>
+                                        {match?.productId ? (
+                                            <button
+                                                onClick={() => navigate(`/products/${match.productId}`)}
+                                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition"
+                                            >
+                                                View Details
+                                            </button>
+                                        ) : (
+                                            <div className="text-xs text-gray-500">No product link available.</div>
+                                        )}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     ) : (
                         <div className="text-center py-8">
-                            <p className="text-gray-500">No products found for this prescription.</p>
+                            <p className="text-gray-500">
+                                {statusLabel === 'PROCESSING' ? 'Processing prescription. Check back soon.' : 'No products found for this prescription.'}
+                            </p>
                         </div>
                     )}
                 </div>
