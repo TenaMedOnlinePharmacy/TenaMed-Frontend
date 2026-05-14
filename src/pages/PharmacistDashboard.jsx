@@ -447,6 +447,19 @@ const PharmacistDashboard = () => {
         return date.toLocaleString();
     };
 
+    const MetricCard = ({ icon, label, value, valueClassName = 'text-[var(--text)]', animationDelay = '0ms' }) => (
+        <div
+            className="nova-card p-5 md:p-6 animate-in fade-in slide-in-from-bottom-2 rounded-3xl flex flex-col items-center justify-center text-center min-h-[122px]"
+            style={{ animationDelay }}
+        >
+            <div className="w-10 h-10 rounded-full bg-[var(--surface2)] border border-[var(--border2)] flex items-center justify-center mb-2">
+                {icon}
+            </div>
+            <p className="text-xs text-[var(--text2)] font-semibold uppercase tracking-wider">{label}</p>
+            <p className={`text-3xl font-bold mt-1 leading-none ${valueClassName}`}>{value}</p>
+        </div>
+    );
+
     return (
         <div className="bg-transparent min-h-[calc(100vh-4.25rem)] relative z-10 transition-colors">
             <div className="bg-[var(--surface)] shadow-[var(--glow)] border-b border-[var(--border2)] sticky top-0 z-20">
@@ -489,37 +502,56 @@ const PharmacistDashboard = () => {
             <div className="nova-main py-8">
                 {isPharmacyOwner ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2">
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Incoming Orders</p>
-                            <p className="text-2xl font-bold text-yellow-500 mt-1">{incomingOrderCount}</p>
-                        </div>
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2" style={{animationDelay: "100ms"}}>
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">High Risk Orders</p>
-                            <p className="text-2xl font-bold text-[var(--danger)] mt-1">{highRiskOrderCount}</p>
-                        </div>
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2" style={{animationDelay: "200ms"}}>
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Rx Images</p>
-                            <p className="text-2xl font-bold text-[var(--accent)] mt-1">{ordersWithImages}</p>
-                        </div>
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2" style={{animationDelay: "300ms"}}>
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Total Amount</p>
-                            <p className="text-2xl font-bold text-[var(--text)] mt-1">${totalOrderAmount.toFixed(2)}</p>
-                        </div>
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2" style={{animationDelay: "400ms"}}>
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Out of Stock</p>
-                            <p className="text-2xl font-bold text-[var(--danger)] mt-1">{outOfStockCount}</p>
-                        </div>
+                        <MetricCard
+                            icon={<ClipboardList className="w-5 h-5 text-yellow-500" />}
+                            label="Incoming Orders"
+                            value={incomingOrderCount}
+                            valueClassName="text-yellow-500"
+                        />
+                        <MetricCard
+                            icon={<XCircle className="w-5 h-5 text-[var(--danger)]" />}
+                            label="High Risk Orders"
+                            value={highRiskOrderCount}
+                            valueClassName="text-[var(--danger)]"
+                            animationDelay="100ms"
+                        />
+                        <MetricCard
+                            icon={<Package className="w-5 h-5 text-[var(--accent)]" />}
+                            label="Rx Images"
+                            value={ordersWithImages}
+                            valueClassName="text-[var(--accent)]"
+                            animationDelay="200ms"
+                        />
+                        <MetricCard
+                            icon={<Truck className="w-5 h-5 text-[var(--text)]" />}
+                            label="Total Amount"
+                            value={`$${totalOrderAmount.toFixed(2)}`}
+                            valueClassName="text-[var(--text)] text-4xl"
+                            animationDelay="300ms"
+                        />
+                        <MetricCard
+                            icon={<XCircle className="w-5 h-5 text-[var(--danger)]" />}
+                            label="Out of Stock"
+                            value={outOfStockCount}
+                            valueClassName="text-[var(--danger)]"
+                            animationDelay="400ms"
+                        />
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2">
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Incoming Orders</p>
-                            <p className="text-2xl font-bold text-[var(--accent)] mt-1">{incomingOrderCount}</p>
-                        </div>
-                        <div className="nova-card p-5 animate-in fade-in slide-in-from-bottom-2" style={{animationDelay: "100ms"}}>
-                            <p className="text-xs text-[var(--text2)] font-medium uppercase tracking-wider">Out of Stock</p>
-                            <p className="text-2xl font-bold text-[var(--danger)] mt-1">{outOfStockCount}</p>
-                        </div>
+                        <MetricCard
+                            icon={<ClipboardList className="w-5 h-5 text-[var(--accent)]" />}
+                            label="Incoming Orders"
+                            value={incomingOrderCount}
+                            valueClassName="text-[var(--accent)]"
+                        />
+                        <MetricCard
+                            icon={<XCircle className="w-5 h-5 text-[var(--danger)]" />}
+                            label="Out of Stock"
+                            value={outOfStockCount}
+                            valueClassName="text-[var(--danger)]"
+                            animationDelay="100ms"
+                        />
                     </div>
                 )}
 

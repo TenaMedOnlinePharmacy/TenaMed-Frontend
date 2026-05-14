@@ -451,7 +451,7 @@ const UserProfilePage = () => {
                     <div className="lg:col-span-3">
                         {activeTab === 'profile' ? (
                             <div className="nova-card p-8 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="flex flex-col gap-2 mb-8">
+                                <div className="flex flex-col gap-2 mb-8  w-full mx-auto px-1 sm:px-2">
                                     <h2 className="font-syne text-2xl font-bold text-[var(--text)] tracking-tight">Personal Information</h2>
                                     {isLoadingUser && (
                                         <p className="text-sm text-[var(--text3)]">Loading profile details...</p>
@@ -460,20 +460,20 @@ const UserProfilePage = () => {
                                         <p className="text-sm text-red-500">{userError}</p>
                                     )}
                                 </div>
-                                <form className="space-y-6 max-w-2xl">
+                                <form className="space-y-6 max-w-2xl w-full mx-auto px-1 sm:px-2">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div>
                                             <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Full Name</label>
                                             <div className="relative">
-                                                <User className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
-                                                <input type="text" value={user.name} readOnly className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
+                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text3)] w-5 h-5" />
+                                                <input type="text" value={user.name} readOnly className="w-full pl-12 pr-4 h-12 leading-5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Email Address</label>
                                             <div className="relative">
-                                                <Mail className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
-                                                <input type="email" value={user.email} readOnly className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
+                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text3)] w-5 h-5" />
+                                                <input type="email" value={user.email} readOnly className="w-full pl-12 pr-4 h-12 leading-5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
                                             </div>
                                         </div>
                                     </div>
@@ -481,8 +481,8 @@ const UserProfilePage = () => {
                                         <div>
                                             <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Account Role</label>
                                             <div className="relative">
-                                                <Users className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
-                                                <input type="text" value={roleLabel} readOnly className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
+                                                <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text3)] w-5 h-5" />
+                                                <input type="text" value={roleLabel} readOnly className="w-full pl-12 pr-4 h-12 leading-5 border border-[var(--border2)] rounded-xl bg-[var(--surface2)] text-[var(--text2)] outline-none cursor-not-allowed opacity-70" />
                                             </div>
                                         </div>
                                     </div>
@@ -490,15 +490,15 @@ const UserProfilePage = () => {
                                         <div>
                                             <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Phone Number</label>
                                             <div className="relative">
-                                                <Phone className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
-                                                <input type="text" value={user.phone} onChange={(e) => setUser({ ...user, phone: e.target.value })} className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition-colors" />
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text3)] w-5 h-5" />
+                                                <input type="text" value={user.phone} onChange={(e) => setUser({ ...user, phone: e.target.value })} className="w-full pl-12 pr-4 h-12 leading-5 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition-colors" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-[var(--text2)] mb-1.5">Shipping Address</label>
                                             <div className="relative">
-                                                <MapPin className="absolute left-4 top-3.5 text-[var(--text3)] w-5 h-5" />
-                                                <input type="text" value={user.address} onChange={(e) => setUser({ ...user, address: e.target.value })} className="w-full pl-12 pr-4 py-3.5 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition-colors" />
+                                                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text3)] w-5 h-5" />
+                                                <input type="text" value={user.address} onChange={(e) => setUser({ ...user, address: e.target.value })} className="w-full pl-12 pr-4 h-12 leading-5 border border-[var(--border2)] bg-[var(--bg)] text-[var(--text)] rounded-xl focus:ring-2 focus:ring-[var(--accent)] outline-none transition-colors" />
                                             </div>
                                         </div>
                                     </div>
