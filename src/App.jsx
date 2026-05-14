@@ -39,6 +39,7 @@ import CreateComplaint from './pages/CreateComplaint';
 import ComplaintDetails from './pages/ComplaintDetails';
 import AdminComplaintList from './pages/AdminComplaintList';
 import AdminComplaintDetails from './pages/AdminComplaintDetails';
+import PrescriptionManualReviewPage from './pages/PrescriptionManualReviewPage';
 
 // Create placeholders for other pages to avoid errors until they are built
 const PlaceholderInfo = ({ title }) => (
@@ -74,6 +75,7 @@ function App() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<HomePage />} />
           <Route path="products" element={<ProductsPage />} />
+          <Route path="products/manualreview/:prescriptionId" element={<PrescriptionManualReviewPage />} />
           <Route path="products/:id" element={<ProductDetailsPage />} />
           <Route
             path="cart"
